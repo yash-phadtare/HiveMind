@@ -1,21 +1,36 @@
 async function requireOrganizationPage() {
-  const response = await fetch('/api/auth/me');
-  if (!response.ok) throw new Error('No active session');
+  const response = await fetch("/api/auth/me");
+  if (!response.ok) throw new Error("No active session");
   const user = await response.json();
-  if (user.role !== 'ORGANIZATION') {
-    window.location.replace({ TEACHER: '/teacher-dashboard.html', STUDENT: '/student-dashboard.html' }[user.role] || '/');
+  if (user.role !== "ORGANIZATION") {
+    window.location.replace(
+      {
+        TEACHER: "/teacher-dashboard.html",
+        STUDENT: "/student-dashboard.html",
+      }[user.role] || "/",
+    );
     return false;
   }
-  document.querySelectorAll('#user-name').forEach(node => { node.textContent = user.fullName; });
-  document.querySelector(`.admin-nav [data-page="${document.body.dataset.adminPage}"]`)?.classList.add('active');
+  document.querySelectorAll("#user-name").forEach((node) => {
+    node.textContent = user.fullName;
+  });
+  document
+    .querySelector(
+      `.admin-nav [data-page="${document.body.dataset.adminPage}"]`,
+    )
+    ?.classList.add("active");
   return true;
 }
 
-document.querySelector('#logout').addEventListener('click', async () => {
-  const button = document.querySelector('#logout');
+document.querySelector("#logout").addEventListener("click", async () => {
+  const button = document.querySelector("#logout");
   button.disabled = true;
-  try { await fetch('/api/auth/logout', { method: 'DELETE' }); } finally { window.location.assign('/'); }
+  try {
+    await fetch("/api/auth/logout", { method: "DELETE" });
+  } finally {
+    window.location.assign("/");
+  }
 });
 
 window.adminReady = requireOrganizationPage();
-window.adminReady.catch(() => window.location.replace('/'));
+window.adminReady.catch(() => window.location.replace("/"));

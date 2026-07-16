@@ -1,3 +1,82 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Categories | Adaptive Learning</title><link rel="stylesheet" href="styles.css"></head>
-<body class="dashboard-page admin-page" data-role="ADMIN" data-admin-page="categories"><main class="admin-shell"><aside class="admin-sidebar"><a class="brand" href="admin-dashboard.html">Adaptive <span>Learning</span><b>.</b></a><p class="sidebar-label">Administration</p><nav class="admin-nav" aria-label="Admin navigation"><a href="admin-dashboard.html" data-page="overview">Overview</a><a href="admin-users.html" data-page="users">Users</a><a href="admin-courses.html" data-page="courses">Course approvals</a><a href="admin-categories.html" data-page="categories">Categories</a><a href="admin-reports.html" data-page="reports">Reports &amp; analytics</a></nav><button id="logout" class="logout sidebar-logout" type="button">Logout</button></aside><section class="admin-content"><header class="admin-topbar"><div><p class="panel-label">Catalog management</p><h1>Course categories</h1></div><span class="role-badge" id="user-name">Administrator</span></header><p id="admin-message" class="message" aria-live="polite"></p><section class="management-panel"><div class="management-heading"><div><h2>Organize the catalog</h2><p>Create reusable categories for teachers to assign to courses.</p></div></div><form id="category-form" class="category-form"><input id="category-name" maxlength="100" placeholder="Category name" required><input id="category-description" maxlength="500" placeholder="Short description (optional)"><button type="submit">Add category</button></form><div class="user-table-wrap"><table><thead><tr><th>Category</th><th>Courses</th><th>Management</th></tr></thead><tbody id="categories-table"></tbody></table></div></section></section></main><script src="admin-nav.js"></script><script src="admin.js"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Categories | Hive Mind</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body
+    class="dashboard-page admin-page"
+    data-role="ADMIN"
+    data-admin-page="categories"
+  >
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand" href="admin-dashboard.html"
+          >Hive <span>Mind</span><b>.</b></a
+        >
+        <p class="sidebar-label">Administration</p>
+        <nav class="admin-nav" aria-label="Admin navigation">
+          <a href="admin-dashboard.html" data-page="overview">Overview</a
+          ><a href="admin-users.html" data-page="users">Users</a
+          ><a href="admin-courses.html" data-page="courses">Course approvals</a
+          ><a href="admin-categories.html" data-page="categories">Categories</a
+          ><a href="admin-reports.html" data-page="reports"
+            >Reports &amp; analytics</a
+          >
+        </nav>
+        <button id="logout" class="logout sidebar-logout" type="button">
+          Logout
+        </button>
+      </aside>
+      <section class="admin-content">
+        <header class="admin-topbar">
+          <div>
+            <p class="panel-label">Catalog management</p>
+            <h1>Course categories</h1>
+          </div>
+          <span class="role-badge" id="user-name">Administrator</span>
+        </header>
+        <p id="admin-message" class="message" aria-live="polite"></p>
+        <section class="management-panel">
+          <div class="management-heading">
+            <div>
+              <h2>Organize the catalog</h2>
+              <p>
+                Create reusable categories for teachers to assign to courses.
+              </p>
+            </div>
+          </div>
+          <form id="category-form" class="category-form">
+            <input
+              id="category-name"
+              maxlength="100"
+              placeholder="Category name"
+              required
+            /><input
+              id="category-description"
+              maxlength="500"
+              placeholder="Short description (optional)"
+            /><button type="submit">Add category</button>
+          </form>
+          <div class="user-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Courses</th>
+                  <th>Management</th>
+                </tr>
+              </thead>
+              <tbody id="categories-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="admin-nav.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

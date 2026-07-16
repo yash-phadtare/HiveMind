@@ -1,3 +1,104 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Organization Overview | Adaptive Learning</title><link rel="stylesheet" href="styles.css"></head>
-<body class="dashboard-page admin-page" data-role="ORGANIZATION" data-admin-page="overview"><main class="admin-shell"><aside class="admin-sidebar"><a class="brand" href="admin-dashboard.html">Adaptive <span>Learning</span><b>.</b></a><p class="sidebar-label">Organization</p><nav class="admin-nav" aria-label="Organization navigation"><a href="admin-dashboard.html" data-page="overview">Overview</a><a href="admin-users.html" data-page="users">People</a><a href="admin-courses.html" data-page="courses">Course approvals</a><a href="admin-categories.html" data-page="categories">Categories</a><a href="admin-reports.html" data-page="reports">Reports &amp; analytics</a></nav><button id="logout" class="logout sidebar-logout" type="button">Logout</button></aside><section class="admin-content"><header class="admin-topbar"><div><p class="panel-label">Organization workspace</p><h1>Welcome, <span id="user-name">Organization</span>.</h1></div><span class="role-badge">Organization</span></header><p id="admin-message" class="message" aria-live="polite"></p><section class="admin-stats"><article><p>Total people</p><strong id="total-users">—</strong></article><article><p>Active students</p><strong id="active-students">—</strong></article><article><p>Active teachers</p><strong id="active-teachers">—</strong></article><article class="pending-stat"><p>Teachers pending</p><strong id="pending-teachers">—</strong></article><article><p>Courses</p><strong id="total-courses">—</strong></article><article class="pending-stat"><p>Courses pending</p><strong id="pending-courses">—</strong></article><article><p>Enrollments</p><strong id="total-enrollments">—</strong></article><article><p>Quizzes</p><strong id="total-quizzes">—</strong></article></section><section class="management-panel quick-links"><div><p class="panel-label">Your organization</p><h2>Manage your learning space</h2><p>All information on this dashboard is restricted to your organization.</p></div><div class="quick-link-grid"><a href="admin-users.html?status=PENDING&amp;role=TEACHER">Review teacher registrations</a><a href="admin-courses.html?status=PENDING">Review submitted courses</a><a href="admin-categories.html">Manage categories</a><a href="admin-reports.html">View reports</a></div></section></section></main><script src="admin-nav.js"></script><script src="admin.js"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Organization Overview | Hive Mind</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body
+    class="dashboard-page admin-page"
+    data-role="ORGANIZATION"
+    data-admin-page="overview"
+  >
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand" href="admin-dashboard.html"
+          >Hive <span>Mind</span><b>.</b></a
+        >
+        <p class="sidebar-label">Organization</p>
+        <nav class="admin-nav" aria-label="Organization navigation">
+          <a href="admin-dashboard.html" data-page="overview">Overview</a
+          ><a href="admin-users.html" data-page="users">People</a
+          ><a href="admin-courses.html" data-page="courses">Course approvals</a
+          ><a href="admin-categories.html" data-page="categories">Categories</a
+          ><a href="admin-reports.html" data-page="reports"
+            >Reports &amp; analytics</a
+          >
+        </nav>
+        <button id="logout" class="logout sidebar-logout" type="button">
+          Logout
+        </button>
+      </aside>
+      <section class="admin-content">
+        <header class="admin-topbar">
+          <div>
+            <p class="panel-label">Organization workspace</p>
+            <h1>Welcome, <span id="user-name">Organization</span>.</h1>
+          </div>
+          <span class="role-badge">Organization</span>
+        </header>
+        <p id="admin-message" class="message" aria-live="polite"></p>
+        <section class="overview-intro" aria-label="Dashboard summary">
+          <p class="workspace-kicker">Institute performance</p>
+          <h2>Your learning community at a glance.</h2>
+          <p>Live totals update as your organization grows. Select a metric below to move directly to the work that supports it.</p>
+        </section>
+        <section class="admin-stats">
+          <article>
+            <p>Total people</p>
+            <strong id="total-users">—</strong>
+          </article>
+          <article>
+            <p>Active students</p>
+            <strong id="active-students">—</strong>
+          </article>
+          <article>
+            <p>Active teachers</p>
+            <strong id="active-teachers">—</strong>
+          </article>
+          <article class="pending-stat">
+            <p>Teachers pending</p>
+            <strong id="pending-teachers">—</strong>
+          </article>
+          <article>
+            <p>Courses</p>
+            <strong id="total-courses">—</strong>
+          </article>
+          <article class="pending-stat">
+            <p>Courses pending</p>
+            <strong id="pending-courses">—</strong>
+          </article>
+          <article>
+            <p>Enrollments</p>
+            <strong id="total-enrollments">—</strong>
+          </article>
+          <article>
+            <p>Quizzes</p>
+            <strong id="total-quizzes">—</strong>
+          </article>
+        </section>
+        <section class="management-panel quick-links">
+          <div>
+            <p class="panel-label">Your organization</p>
+            <h2>Manage your learning space</h2>
+            <p>
+              All information on this dashboard is restricted to your
+              organization.
+            </p>
+          </div>
+          <div class="quick-link-grid">
+            <a href="admin-users.html?status=PENDING&amp;role=TEACHER"
+              >Review teacher registrations</a
+            ><a href="admin-courses.html?status=PENDING"
+              >Review submitted courses</a
+            ><a href="admin-categories.html">Manage categories</a
+            ><a href="admin-reports.html">View reports</a>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="admin-nav.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

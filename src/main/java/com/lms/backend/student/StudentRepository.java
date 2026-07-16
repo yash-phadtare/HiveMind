@@ -110,6 +110,16 @@ public class StudentRepository {
                 .query().listOfRows();
     }
 
+    public Optional<String> contentFile(Long studentId, Long contentId) {
+        return jdbc.sql("""
+                SELECT cc.body FROM course_content cc
+                JOIN enrollments e ON e.course_id = cc.course_id
+                WHERE cc.id = :contentId AND e.student_id = :studentId AND cc.type = 'PDF' AND cc.body LIKE 'file:%'
+                """)
+                .param("contentId", contentId).param("studentId", studentId)
+                .query(String.class).list().stream().findFirst();
+    }
+
     public List<Map<String, Object>> assignments(Long studentId) {
         return jdbc.sql("""
                 SELECT a.id, a.title, a.instructions, a.due_at, a.max_score, c.title as course_title,
@@ -161,10 +171,17 @@ public class StudentRepository {
             throw new IllegalStateException("Not authorized to submit this assignment.");
         }
 
+        boolean pastDue = jdbc.sql("SELECT COUNT(*) FROM assignments WHERE id = :assignmentId AND due_at IS NOT NULL AND due_at < CURRENT_TIMESTAMP")
+                .param("assignmentId", assignmentId)
+                .query(Long.class).single() > 0;
+        if (pastDue) {
+            throw new IllegalStateException("The submission deadline for this assignment has passed.");
+        }
+
         Optional<Map<String, Object>> existingSubmission = jdbc.sql("SELECT id, score FROM assignment_submissions WHERE assignment_id = :assignmentId AND student_id = :studentId")
                 .param("assignmentId", assignmentId)
                 .param("studentId", studentId)
-                .query().optional();
+                .query().listOfRows().stream().findFirst();
 
         if (existingSubmission.isPresent() && existingSubmission.get().get("score") != null) {
             throw new IllegalStateException("This assignment has already been graded and cannot be resubmitted.");
@@ -174,20 +191,18 @@ public class StudentRepository {
 
         Long submissionId;
         if (existingSubmission.isEmpty()) {
-            org.springframework.jdbc.support.KeyHolder keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
-            jdbcTemplate.update(connection -> {
-                var statement = connection.prepareStatement("""
-                        INSERT INTO assignment_submissions (assignment_id, student_id, content, submitted_at)
-                        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                        """, Statement.RETURN_GENERATED_KEYS);
-                statement.setLong(1, assignmentId);
-                statement.setLong(2, studentId);
-                statement.setString(3, content);
-                return statement;
-            }, keyHolder);
-            Number idVal = keyHolder.getKey();
-            if (idVal == null) throw new IllegalStateException("Failed to insert submission.");
-            submissionId = idVal.longValue();
+            jdbc.sql("""
+                    INSERT INTO assignment_submissions (assignment_id, student_id, content, submitted_at)
+                    VALUES (:assignmentId, :studentId, :content, CURRENT_TIMESTAMP)
+                    """)
+                    .param("assignmentId", assignmentId)
+                    .param("studentId", studentId)
+                    .param("content", content)
+                    .update();
+            submissionId = jdbc.sql("SELECT id FROM assignment_submissions WHERE assignment_id = :assignmentId AND student_id = :studentId")
+                    .param("assignmentId", assignmentId)
+                    .param("studentId", studentId)
+                    .query(Long.class).single();
         } else {
             submissionId = ((Number) existingSubmission.get().get("id")).longValue();
             jdbc.sql("UPDATE assignment_submissions SET submitted_at = CURRENT_TIMESTAMP, content = :content WHERE id = :submissionId")
@@ -215,7 +230,7 @@ public class StudentRepository {
             jdbc.sql("""
                     INSERT INTO assignment_question_answers (submission_id, question_id, answer_text)
                     VALUES (:submissionId, :questionId, :answerText)
-                    ON DUPLICATE KEY UPDATE answer_text = :answerText
+                    ON DUPLICATE KEY UPDATE answer_text = VALUES(answer_text)
                     """)
                     .param("submissionId", submissionId)
                     .param("questionId", questionId)
@@ -233,7 +248,18 @@ public class StudentRepository {
                 """)
                 .param("assignmentId", assignmentId)
                 .param("studentId", studentId)
-                .query().optional();
+                .query((rs, rowNum) -> {
+                    Map<String, Object> row = new java.util.HashMap<>();
+                    row.put("id", rs.getLong("id"));
+                    row.put("submitted_at", rs.getTimestamp("submitted_at"));
+                    row.put("score", rs.getObject("score"));
+                    row.put("feedback", rs.getString("feedback"));
+                    row.put("max_score", rs.getInt("max_score"));
+                    row.put("assignment_title", rs.getString("assignment_title"));
+                    row.put("instructions", rs.getString("instructions"));
+                    row.put("content", rs.getString("content"));
+                    return row;
+                }).list().stream().findFirst();
 
         if (submission.isEmpty()) return Map.of();
 
@@ -407,9 +433,19 @@ public class StudentRepository {
                 """)
                 .param("quizId", quizId)
                 .param("studentId", studentId)
-                .query().optional();
+                .query((rs, rowNum) -> {
+                    Map<String, Object> row = new java.util.HashMap<>();
+                    row.put("id", rs.getLong("id"));
+                    row.put("submitted_at", rs.getTimestamp("submitted_at"));
+                    row.put("score", rs.getBigDecimal("score"));
+                    row.put("quiz_title", rs.getString("quiz_title"));
+                    row.put("description", rs.getString("description"));
+                    return row;
+                }).list().stream().findFirst();
 
-        if (submission.isEmpty()) return Map.of();
+        if (submission.isEmpty()) {
+            throw new IllegalStateException("Quiz submission not found.");
+        }
 
         Long submissionId = ((Number) submission.get().get("id")).longValue();
         List<Map<String, Object>> answers = jdbc.sql("""

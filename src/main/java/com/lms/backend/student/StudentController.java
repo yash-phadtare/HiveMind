@@ -4,9 +4,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.lms.backend.auth.AuthResponse;
+import com.lms.backend.content.ContentFileStorage;
 import com.lms.backend.user.Role;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +25,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class StudentController {
     private static final String USER_SESSION_KEY = "authenticatedUser";
     private final StudentRepository repository;
+    private final ContentFileStorage fileStorage;
 
-    public StudentController(StudentRepository repository) {
+    public StudentController(StudentRepository repository, ContentFileStorage fileStorage) {
         this.repository = repository;
+        this.fileStorage = fileStorage;
     }
 
     private AuthResponse student(HttpSession session) {
@@ -61,6 +68,16 @@ public class StudentController {
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
+    }
+
+    @GetMapping("/content/{contentId}/file")
+    public ResponseEntity<Resource> contentFile(@PathVariable Long contentId, HttpSession session) {
+        AuthResponse user = student(session);
+        String reference = repository.contentFile(user.id(), contentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "PDF file not found."));
+        Resource file = fileStorage.load(reference.substring("file:".length()));
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=course-resource.pdf").body(file);
     }
 
     @GetMapping("/assignments")
@@ -138,6 +155,10 @@ public class StudentController {
     @GetMapping("/quizzes/{quizId}/submission")
     public Map<String, Object> quizSubmissionDetails(@PathVariable Long quizId, HttpSession session) {
         AuthResponse user = student(session);
-        return repository.quizSubmissionDetails(user.id(), quizId);
+        try {
+            return repository.quizSubmissionDetails(user.id(), quizId);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
     }
 }

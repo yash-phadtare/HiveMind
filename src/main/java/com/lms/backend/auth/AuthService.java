@@ -35,7 +35,7 @@ public class AuthService {
         if (!organizations.existsById(request.organizationId())) {
             throw new IllegalArgumentException("The selected organization does not exist.");
         }
-        AccountStatus status = request.role().name().equals("TEACHER") ? AccountStatus.PENDING : AccountStatus.ACTIVE;
+        AccountStatus status = AccountStatus.PENDING;
         User user = users.save(request.fullName().trim(), email,
                 passwordEncoder.encode(request.password()), request.role(), status, request.organizationId());
         return response(user);
@@ -65,7 +65,7 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password.");
         }
         if (user.status() == AccountStatus.PENDING) {
-            throw new IllegalArgumentException("Your teacher account is waiting for organization approval.");
+            throw new IllegalArgumentException("Your account is waiting for institution approval.");
         }
         if (user.status() != AccountStatus.ACTIVE) {
             throw new IllegalArgumentException("This account is not active. Please contact your organization.");

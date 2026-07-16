@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.lms.backend.auth.AuthResponse;
+import com.lms.backend.content.ContentFileStorage;
 import com.lms.backend.user.Role;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -23,7 +26,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class TeacherController {
     private static final String USER_SESSION_KEY = "authenticatedUser";
     private final TeacherRepository repository;
-    public TeacherController(TeacherRepository repository) { this.repository = repository; }
+    private final ContentFileStorage fileStorage;
+    public TeacherController(TeacherRepository repository, ContentFileStorage fileStorage) { this.repository = repository; this.fileStorage = fileStorage; }
 
     @GetMapping("/dashboard") public TeacherDashboardResponse dashboard(HttpSession session) { return repository.dashboard(teacher(session).id()); }
     @GetMapping("/courses") public List<TeacherCourseResponse> courses(HttpSession session) { return repository.courses(teacher(session).id()); }
@@ -40,6 +44,16 @@ public class TeacherController {
     }
     @GetMapping("/courses/{courseId}/content") public List<Map<String,Object>> content(@PathVariable Long courseId, HttpSession session) { requireCourse(courseId, teacher(session)); return repository.content(courseId); }
     @PostMapping("/content") public void addContent(@Valid @RequestBody TeacherRequests.Content request, HttpSession session) { requireCourse(request.courseId(), teacher(session)); repository.addContent(request); }
+    @PostMapping("/content/pdf")
+    public void addPdfContent(@RequestParam Long courseId, @RequestParam String title, @RequestParam MultipartFile file, HttpSession session) {
+        requireCourse(courseId, teacher(session));
+        if (title == null || title.isBlank() || title.length() > 180) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A PDF title is required.");
+        try {
+            repository.addContent(new TeacherRequests.Content(courseId, title, TeacherRequests.ContentType.PDF, "file:" + fileStorage.storePdf(file)));
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+        }
+    }
     @GetMapping("/assignments") public List<Map<String,Object>> assignments(HttpSession session) { return repository.assignments(teacher(session).id()); }
     @PostMapping("/assignments") public void addAssignment(@Valid @RequestBody TeacherRequests.Assignment request, HttpSession session) { requireCourse(request.courseId(), teacher(session)); repository.addAssignment(request); }
     @PatchMapping("/assignments/{id}/publish") public void publishAssignment(@PathVariable Long id, HttpSession session) { if (!repository.publishAssignment(id, teacher(session).id())) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignment not found."); }
@@ -51,6 +65,7 @@ public class TeacherController {
     @PatchMapping("/quizzes/{quizId}/publish") public void publishQuiz(@PathVariable Long quizId, HttpSession session) { if (!repository.publishQuiz(quizId, teacher(session).id())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Add at least one question before publishing this quiz."); }
     @GetMapping("/courses/{courseId}/analytics") public TeacherCourseAnalyticsResponse analytics(@PathVariable Long courseId, HttpSession session) { requireCourse(courseId, teacher(session)); return repository.analytics(courseId); }
     @GetMapping("/assignments/{assignmentId}/submissions") public List<Map<String,Object>> submissions(@PathVariable Long assignmentId, HttpSession session) { return repository.submissions(assignmentId, teacher(session).id()); }
+    @GetMapping("/students/progress") public List<Map<String, Object>> studentProgress(HttpSession session) { return repository.studentProgress(teacher(session).id()); }
     @PatchMapping("/submissions/{submissionId}/grade") public void grade(@PathVariable Long submissionId, @Valid @RequestBody TeacherRequests.Grade request, HttpSession session) {
         Long teacherId = teacher(session).id();
         if (!repository.canGrade(submissionId, request.score(), teacherId)) {
@@ -115,7 +130,10 @@ public class TeacherController {
 
     @GetMapping("/quiz-submissions/{submissionId}/answers")
     public List<Map<String, Object>> quizSubmissionAnswers(@PathVariable Long submissionId, HttpSession session) {
-        teacher(session);
+        AuthResponse teacher = teacher(session);
+        if (!repository.ownsQuizSubmission(submissionId, teacher.id())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz submission not found.");
+        }
         return repository.quizSubmissionAnswers(submissionId);
     }
 

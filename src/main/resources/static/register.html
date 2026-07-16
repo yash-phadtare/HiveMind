@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register | Hive Mind</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="register-page">
+    <main>
+      <div class="shell register-shell">
+        <section class="hero" aria-labelledby="hero-title">
+          <nav class="nav" aria-label="Brand">
+            <a class="brand" href="/">Hive <span>Mind</span><b>.</b></a>
+            <p class="workspace">Personal learning space</p>
+          </nav>
+          <div class="hero-copy">
+            <span class="eyebrow">Your learning space</span>
+            <h1 id="hero-title">A better way<br />to <em>grow.</em></h1>
+            <p class="intro">
+              Create your account and join a workspace that is built around
+              meaningful progress.
+            </p>
+          </div>
+          <article class="course-card course">
+            <div class="icon" aria-hidden="true">✦</div>
+            <h2>Your next chapter</h2>
+            <p>Begins right here</p>
+            <div class="progress"><span></span></div>
+          </article>
+          <article class="course-card study">
+            <p>At your pace</p>
+            <div class="hours">∞</div>
+            <p class="trend">Your growth</p>
+          </article>
+        </section>
+        <section class="login-panel" aria-labelledby="auth-title">
+          <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="auth-header">
+            <p class="panel-label">Create your account</p>
+            <h2 id="auth-title">Join the workspace.</h2>
+            <p>Choose your role and start your learning journey.</p>
+          </div>
+          <form id="register-form" class="auth-form">
+            <div class="field">
+              <label for="full-name">Full name</label
+              ><input
+                id="full-name"
+                type="text"
+                name="fullName"
+                maxlength="100"
+                autocomplete="name"
+                placeholder="Your full name"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="register-email">Email address</label
+              ><input
+                id="register-email"
+                type="email"
+                name="email"
+                autocomplete="email"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="register-password">Password</label
+                ><input
+                  id="register-password"
+                  type="password"
+                  name="password"
+                  minlength="8"
+                  autocomplete="new-password"
+                  placeholder="8+ characters"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="role">Register as</label
+                ><select id="role" name="role" required>
+                  <option value="STUDENT">Student</option>
+                  <option value="TEACHER">Teacher</option>
+                  <option value="ORGANIZATION">
+                    Organization / institution
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div id="institution-name-field" class="field hidden">
+              <label for="institution-name">Institution name</label
+              ><input
+                id="institution-name"
+                type="text"
+                maxlength="150"
+                name="organizationName"
+                placeholder="Your school or institution name"
+              />
+            </div>
+            <div id="organization-field" class="field">
+              <label for="register-organization-id">Organization</label
+              ><select
+                id="register-organization-id"
+                name="organizationId"
+                required
+              >
+                <option value="">Choose your organization</option></select
+              ><small id="organization-selection-help"
+                >Select the institution where you will learn or teach.</small
+              >
+            </div>
+            <button type="submit">
+              Create account <span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <p id="message" class="message" aria-live="polite" role="status"></p>
+          <p class="footer">
+            Already have an account? <a href="login.html">Sign in</a>
+          </p>
+        </section>
+      </div>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,117 +1,304 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Student Workspace | Adaptive Learning</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body class="dashboard-page student-page" data-role="STUDENT">
-  <main class="admin-shell">
-    <aside class="admin-sidebar">
-      <a class="brand" href="student-dashboard.html">Adaptive <span>Learning</span><b>.</b></a>
-      <p class="sidebar-label">Student Workspace</p>
-      <nav class="admin-nav">
-        <a href="#overview" class="active">Overview</a>
-        <a href="#directory">Course Directory</a>
-        <a href="#courses">My Courses</a>
-        <a href="#assignments">Assignments</a>
-      </nav>
-      <button id="logout" class="logout sidebar-logout" type="button">Logout</button>
-    </aside>
-    <section class="admin-content">
-      <header class="admin-topbar">
-        <div>
-          <p class="panel-label">Student Workspace</p>
-          <h1>Welcome, <span id="user-name">Student</span>.</h1>
-        </div>
-        <span class="role-badge">Student</span>
-      </header>
-      
-      <p id="student-message" class="message" aria-live="polite"></p>
-
-      <!-- Overview Tab -->
-      <section id="overview" class="student-view">
-        <div id="student-stats" class="admin-stats">
-          <!-- Populated by JS -->
-        </div>
-        <section class="management-panel" style="margin-top: 22px;">
-          <h2>Your Learning Dashboard</h2>
-          <p>Track your enrolled courses, view materials, complete assignments, and monitor your grades all in one place.</p>
-        </section>
-      </section>
-
-      <!-- Course Directory Tab -->
-      <section id="directory" class="student-view hidden">
-        <section class="management-panel">
-          <h2>Course Directory</h2>
-          <p>Find new courses, enroll, and start learning.</p>
-          <div id="directory-list" class="teacher-list" style="margin-top: 15px;">
-            <!-- Available courses will be loaded here -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Workspace | Hive Mind</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="dashboard-page student-page" data-role="STUDENT">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand" href="student-dashboard.html"
+          >Hive <span>Mind</span><b>.</b></a
+        >
+        <p class="sidebar-label">Student Workspace</p>
+        <nav class="admin-nav">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#directory">Course Directory</a>
+          <a href="#courses">My Courses</a>
+          <a href="#announcements">Announcements</a>
+          <a href="#assignments">Assignments</a>
+          <a href="#quizzes">Quizzes</a>
+        </nav>
+        <button id="logout" class="logout sidebar-logout" type="button">
+          Logout
+        </button>
+      </aside>
+      <section class="admin-content">
+        <header class="admin-topbar">
+          <div>
+            <p class="panel-label">Student Workspace</p>
+            <h1>Welcome, <span id="user-name">Student</span>.</h1>
           </div>
-        </section>
-      </section>
+          <span class="role-badge">Student</span>
+        </header>
 
-      <!-- My Courses Tab -->
-      <section id="courses" class="student-view hidden">
-        <section class="management-panel">
-          <h2>My Courses</h2>
-          <p>Select a course to view its lessons and shared resources.</p>
-          <select id="course-select-content" style="margin: 15px 0;">
-            <option value="">Select an enrolled course</option>
-          </select>
-          <div id="content-list" class="teacher-list">
-            <!-- Course content will be loaded here -->
-          </div>
-        </section>
-      </section>
+        <p id="student-message" class="message" aria-live="polite"></p>
 
-      <!-- Assignments Tab -->
-      <section id="assignments" class="student-view hidden">
-        <section class="management-panel">
-          <h2>My Assignments</h2>
-          <p>Complete your coursework and see grading results.</p>
-          <div id="student-assignment-list" class="teacher-list" style="margin-top: 15px;">
-            <!-- Assignments will be loaded here -->
-          </div>
-        </section>
-
-        <!-- Answering assignment questions panel -->
-        <section id="assignment-work-panel" class="management-panel hidden" style="margin-top: 25px; border-top: 2px solid var(--indigo); background: #fbfbfc;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 id="work-assignment-title">Complete Assignment</h3>
-            <button id="close-assignment-work" class="table-action delete" style="padding: 6px 12px; margin: 0; min-height: auto;" type="button">Back to list</button>
-          </div>
-          <p id="work-assignment-instructions" style="color:var(--muted); font-size:13px; line-height:1.6; margin-bottom:15px;"></p>
-          
-          <form id="assignment-submission-form" class="teacher-form" style="display: flex; flex-direction: column; gap: 18px;">
-            <input type="hidden" id="work-assignment-id">
-            <div id="work-questions-container" style="display: flex; flex-direction: column; gap: 18px;">
-              <!-- Questions generated by JS -->
+        <!-- Overview Tab -->
+        <section id="overview" class="student-view">
+          <section class="workspace-hero student-hero" aria-labelledby="student-journey-title">
+            <div>
+              <p class="workspace-kicker">Your learning journey</p>
+              <h2 id="student-journey-title">Make today’s learning count.</h2>
+              <p>
+                Pick up where you left off, keep an eye on upcoming work, and
+                turn small sessions into steady progress.
+              </p>
+              <nav class="page-shortcuts" aria-label="Student quick actions">
+                <a href="#courses">Continue learning <span aria-hidden="true">→</span></a>
+                <a href="#assignments">Review assignments</a>
+              </nav>
             </div>
-            <div style="display: flex; justify-content: end; margin-top: 10px;">
-              <button id="submit-answers-btn" style="margin: 0;">Submit Assignment</button>
-            </div>
-          </form>
+          </section>
+          <div id="student-stats" class="admin-stats">
+            <!-- Populated by JS -->
+          </div>
         </section>
 
-        <!-- Submission details & grading results panel -->
-        <section id="assignment-details-panel" class="management-panel hidden" style="margin-top: 25px; border-top: 2px solid var(--indigo); background: #fbfbfc;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 id="details-assignment-title">Submission Details</h3>
-            <button id="close-assignment-details" class="table-action delete" style="padding: 6px 12px; margin: 0; min-height: auto;" type="button">Back to list</button>
-          </div>
-          <div id="details-grade-info" style="margin-bottom: 20px; padding: 15px; border-radius: 12px; background: var(--indigo-soft);">
-            <!-- Grade and feedback loaded here -->
-          </div>
-          <div id="details-answers-container" style="display: flex; flex-direction: column; gap: 15px;">
-            <!-- Answers and questions loaded here -->
-          </div>
+        <!-- Announcements Tab -->
+        <section id="announcements" class="student-view hidden">
+          <section class="management-panel">
+            <h2>Course Announcements</h2>
+            <p>Stay up to date with messages from your instructors.</p>
+            <select id="course-select-announcements" style="margin: 15px 0">
+              <option value="">Select an enrolled course</option>
+            </select>
+            <div id="announcement-list" class="teacher-list"></div>
+          </section>
+        </section>
+
+        <!-- Course Directory Tab -->
+        <section id="directory" class="student-view hidden">
+          <section class="management-panel">
+            <h2>Course Directory</h2>
+            <p>Find new courses, enroll, and start learning.</p>
+            <div
+              id="directory-list"
+              class="teacher-list"
+              style="margin-top: 15px"
+            >
+              <!-- Available courses will be loaded here -->
+            </div>
+          </section>
+        </section>
+
+        <!-- My Courses Tab -->
+        <section id="courses" class="student-view hidden">
+          <section class="management-panel">
+            <h2>My Courses</h2>
+            <p>Select a course to view its lessons and shared resources.</p>
+            <select id="course-select-content" style="margin: 15px 0">
+              <option value="">Select an enrolled course</option>
+            </select>
+            <div id="content-list" class="teacher-list">
+              <!-- Course content will be loaded here -->
+            </div>
+          </section>
+        </section>
+
+        <!-- Assignments Tab -->
+        <section id="assignments" class="student-view hidden">
+          <section class="management-panel">
+            <h2>My Assignments</h2>
+            <p>Complete your coursework and see grading results.</p>
+            <div
+              id="student-assignment-list"
+              class="teacher-list"
+              style="margin-top: 15px"
+            >
+              <!-- Assignments will be loaded here -->
+            </div>
+          </section>
+
+          <!-- Answering assignment questions panel -->
+          <section
+            id="assignment-work-panel"
+            class="management-panel sub-panel hidden"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+              "
+            >
+              <h3 id="work-assignment-title">Complete Assignment</h3>
+              <button
+                id="close-assignment-work"
+                class="table-action delete"
+                style="padding: 6px 12px; margin: 0; min-height: auto"
+                type="button"
+              >
+                Back to list
+              </button>
+            </div>
+            <p
+              id="work-assignment-instructions"
+              style="
+                color: var(--muted);
+                font-size: 13px;
+                line-height: 1.6;
+                margin-bottom: 15px;
+              "
+            ></p>
+
+            <form
+              id="assignment-submission-form"
+              class="teacher-form"
+              style="display: flex; flex-direction: column; gap: 18px"
+            >
+              <input type="hidden" id="work-assignment-id" />
+              <div
+                id="work-questions-container"
+                style="display: flex; flex-direction: column; gap: 18px"
+              >
+                <!-- Questions generated by JS -->
+              </div>
+              <div
+                style="display: flex; justify-content: end; margin-top: 10px"
+              >
+                <button id="submit-answers-btn" style="margin: 0">
+                  Submit Assignment
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Submission details & grading results panel -->
+          <section
+            id="assignment-details-panel"
+            class="management-panel sub-panel hidden"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+              "
+            >
+              <h3 id="details-assignment-title">Submission Details</h3>
+              <button
+                id="close-assignment-details"
+                class="table-action delete"
+                style="padding: 6px 12px; margin: 0; min-height: auto"
+                type="button"
+              >
+                Back to list
+              </button>
+            </div>
+            <div
+              id="details-grade-info"
+              style="
+                margin-bottom: 20px;
+                padding: 15px;
+                border-radius: 12px;
+                background: var(--indigo-soft);
+              "
+            >
+              <!-- Grade and feedback loaded here -->
+            </div>
+            <div
+              id="details-answers-container"
+              style="display: flex; flex-direction: column; gap: 15px"
+            >
+              <!-- Answers and questions loaded here -->
+            </div>
+          </section>
+        </section>
+
+        <!-- Quizzes Tab -->
+        <section id="quizzes" class="student-view hidden">
+          <section class="management-panel">
+            <h2>My Quizzes</h2>
+            <p>
+              Select a course, complete published quizzes, and review your
+              results.
+            </p>
+            <select id="course-select-quizzes" style="margin: 15px 0">
+              <option value="">Select an enrolled course</option>
+            </select>
+            <div id="quiz-list" class="teacher-list"></div>
+          </section>
+
+          <section
+            id="quiz-work-panel"
+            class="management-panel sub-panel hidden"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+              "
+            >
+              <h3 id="quiz-work-title">Complete Quiz</h3>
+              <button
+                id="close-quiz-work"
+                class="table-action delete"
+                type="button"
+              >
+                Back to list
+              </button>
+            </div>
+            <form
+              id="quiz-submission-form"
+              class="teacher-form"
+              style="display: flex; flex-direction: column; gap: 18px"
+            >
+              <input type="hidden" id="work-quiz-id" />
+              <div
+                id="quiz-questions-container"
+                style="display: flex; flex-direction: column; gap: 18px"
+              ></div>
+              <div style="display: flex; justify-content: end">
+                <button type="submit" style="margin: 0">Submit Quiz</button>
+              </div>
+            </form>
+          </section>
+
+          <section
+            id="quiz-details-panel"
+            class="management-panel sub-panel hidden"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+              "
+            >
+              <h3 id="quiz-details-title">Quiz Results</h3>
+              <button
+                id="close-quiz-details"
+                class="table-action delete"
+                type="button"
+              >
+                Back to list
+              </button>
+            </div>
+            <div
+              id="quiz-score-info"
+              style="
+                margin-bottom: 20px;
+                padding: 15px;
+                border-radius: 12px;
+                background: var(--indigo-soft);
+              "
+            ></div>
+            <div
+              id="quiz-answers-container"
+              style="display: flex; flex-direction: column; gap: 15px"
+            ></div>
+          </section>
         </section>
       </section>
-
-    </section>
-  </main>
-  <script src="dashboard.js"></script>
-</body>
+    </main>
+    <script src="dashboard.js"></script>
+  </body>
 </html>

@@ -1,11 +1,398 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Teacher Workspace | Adaptive Learning</title><link rel="stylesheet" href="styles.css"></head>
-<body class="dashboard-page teacher-page" data-role="TEACHER"><main class="admin-shell"><aside class="admin-sidebar"><a class="brand" href="teacher-dashboard.html">Adaptive <span>Learning</span><b>.</b></a><p class="sidebar-label">Teacher workspace</p><nav class="admin-nav"><a href="#overview" class="active">Overview</a><a href="#courses">Courses &amp; resources</a><a href="#assessments">Assignments &amp; quizzes</a><a href="#submissions">Submissions</a><a href="#analytics">Analytics</a><a href="#announcements">Announcements</a></nav><button id="logout" class="logout sidebar-logout" type="button">Logout</button></aside>
-<section class="admin-content"><header class="admin-topbar"><div><p class="panel-label">Teacher workspace</p><h1>Welcome, <span id="user-name">Teacher</span>.</h1></div><span class="role-badge">Teacher</span></header><p id="teacher-message" class="message" aria-live="polite"></p>
-<section id="overview" class="teacher-view"><div id="teacher-stats" class="admin-stats"></div><section class="management-panel"><h2>Teaching at a glance</h2><p>Create courses, share learning resources, conduct quizzes, grade submissions, and follow performance.</p></section></section>
-<section id="courses" class="teacher-view hidden"><section class="management-panel"><div class="management-heading"><div><h2>My courses</h2><p>New and edited courses are sent for organization approval.</p></div></div><form id="course-form" class="teacher-form"><input name="title" maxlength="180" placeholder="Course title" required><input name="description" maxlength="10000" placeholder="Course description"><select name="categoryId" id="course-category"><option value="">Uncategorized</option></select><button>Create course</button></form><div id="course-list" class="teacher-list"></div></section><section class="management-panel"><h2>Share learning resources</h2><p>Publish lessons, notes, PDF links, and video links for any of your courses.</p><form id="content-form" class="teacher-form"><select name="courseId" class="course-select" required></select><input name="title" maxlength="180" placeholder="Resource title" required><select name="type"><option value="LESSON">Lesson</option><option value="NOTE">Note</option><option value="PDF">PDF link</option><option value="VIDEO">Video link</option></select><textarea name="body" maxlength="10000" placeholder="Resource body (supports markdown like **bold**, *italics*, `code`)" style="grid-column: 1 / -1; min-height: 90px; resize: vertical;"></textarea><div style="grid-column: 1 / -1; display: flex; gap: 8px; justify-content: end;"><button type="button" id="cancel-content-edit" class="table-action" style="display: none; margin: 0; min-height: 47px; padding: 0 20px;">Cancel Edit</button><button id="submit-content-btn" style="margin: 0;">Share resource</button></div></form><div id="content-list" class="teacher-list"></div></section></section>
-<section id="assessments" class="teacher-view hidden"><section class="management-panel"><h2>Assignments</h2><form id="assignment-form" class="teacher-form"><select name="courseId" class="course-select" required></select><input name="title" maxlength="180" placeholder="Assignment title" required><input name="dueAt" type="datetime-local"><input name="maxScore" type="number" min="1" value="100" required><textarea name="instructions" maxlength="10000" placeholder="Assignment instructions (supports markdown like **bold**, *italics*, `code`)" style="grid-column: 1 / -1; min-height: 90px; resize: vertical;"></textarea><div style="grid-column: 1 / -1; display: flex; gap: 8px; justify-content: end;"><button type="button" id="cancel-assignment-edit" class="table-action" style="display: none; margin: 0; min-height: 47px; padding: 0 20px;">Cancel Edit</button><button id="submit-assignment-btn" style="margin: 0;">Create assignment</button></div></form><div id="assignment-list" class="teacher-list"></div><section id="assignment-question-panel" class="management-panel hidden" style="margin-top: 25px; border-top: 2px solid var(--indigo); background: #fbfbfc;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h3>Add assignment question</h3><button id="close-assignment-questions" class="table-action delete" style="padding: 6px 12px; margin: 0; min-height: auto;" type="button">Close Panel</button></div><form id="assignment-question-form" class="teacher-form"><input id="question-assignment-id" type="hidden"><input name="questionText" maxlength="10000" placeholder="Question text" required style="grid-column: 1 / -1;"><div style="grid-column: 1 / -1; display: flex; justify-content: end;"><button style="margin: 0;">Add question</button></div></form><div id="assignment-question-list" class="teacher-list"></div></section></section><section class="management-panel"><h2>Quizzes and question bank</h2><form id="quiz-form" class="teacher-form"><select name="courseId" class="course-select" required></select><input name="title" maxlength="180" placeholder="Quiz title" required><input name="description" maxlength="5000" placeholder="Quiz instructions (optional)"><button>Create quiz</button></form><div id="quiz-list" class="teacher-list"></div><section id="question-panel" class="management-panel hidden" style="margin-top: 25px; border-top: 2px solid var(--indigo); background: #fbfbfc;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h3>Add quiz question</h3><button id="close-questions" class="table-action delete" style="padding: 6px 12px; margin: 0; min-height: auto;" type="button">Close Panel</button></div><form id="question-form" class="teacher-form"><input id="question-quiz-id" type="hidden"><input name="questionText" maxlength="10000" placeholder="Question text" required><input name="options" placeholder="Options separated by | (e.g. Yes | No | Maybe)" required><input name="correctAnswer" maxlength="1000" placeholder="Correct answer (must match one option exactly)" required><input name="points" type="number" min="1" max="100" value="1" required><button>Add question</button></form><div id="question-list" class="teacher-list"></div></section></section></section>
-<section id="submissions" class="teacher-view hidden"><section class="management-panel"><h2>Student submissions</h2><p>Select an assignment to view and grade submitted work.</p><select id="submission-assignment"><option value="">Select assignment</option></select><div id="submission-list" class="teacher-list"></div></section></section>
-<section id="analytics" class="teacher-view hidden"><section class="management-panel"><h2>Course performance</h2><p>Track engagement, shared resources, assessment activity, and average assignment scores.</p><select id="analytics-course" class="course-select"><option value="">Select course</option></select><div id="analytics-results" class="admin-stats"></div></section></section>
-<section id="announcements" class="teacher-view hidden"><section class="management-panel"><h2>Publish an announcement</h2><form id="announcement-form" class="teacher-form"><select name="courseId" class="course-select" required></select><input name="title" maxlength="180" placeholder="Announcement title" required><input name="message" maxlength="10000" placeholder="Message" required><button>Publish announcement</button></form><div id="announcement-list" class="teacher-list"></div></section></section>
-</section></main><script src="teacher.js"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teacher Workspace | Hive Mind</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="dashboard-page teacher-page" data-role="TEACHER">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand" href="teacher-dashboard.html"
+          >Hive <span>Mind</span><b>.</b></a
+        >
+        <p class="sidebar-label">Teacher workspace</p>
+        <nav class="admin-nav">
+          <a href="#overview" class="active">Overview</a
+          ><a href="#courses">Courses &amp; resources</a
+          ><a href="#assessments">Assignments &amp; quizzes</a
+          ><a href="#submissions">Submissions</a
+          ><a href="#analytics">Analytics</a
+          ><a href="#announcements">Announcements</a>
+        </nav>
+        <button id="logout" class="logout sidebar-logout" type="button">
+          Logout
+        </button>
+      </aside>
+      <section class="admin-content">
+        <header class="admin-topbar">
+          <div>
+            <p class="panel-label">Teacher workspace</p>
+            <h1>Welcome, <span id="user-name">Teacher</span>.</h1>
+          </div>
+          <span class="role-badge">Teacher</span>
+        </header>
+        <p id="teacher-message" class="message" aria-live="polite"></p>
+        <section id="overview" class="teacher-view">
+          <section class="workspace-hero teacher-hero" aria-labelledby="teaching-focus-title">
+            <div>
+              <p class="workspace-kicker">Teaching command center</p>
+              <h2 id="teaching-focus-title">Guide learning with confidence.</h2>
+              <p>
+                Create a clear next step for your learners, then use your
+                workspace to publish resources, review work, and follow impact.
+              </p>
+              <nav class="page-shortcuts" aria-label="Teacher quick actions">
+                <a href="#courses">Create or update a course <span aria-hidden="true">→</span></a>
+                <a href="#submissions">Review submissions</a>
+              </nav>
+            </div>
+            <aside class="hero-insight" aria-label="Teaching workspace insight">
+              <span aria-hidden="true">↗</span>
+              <strong>Build momentum for every learner.</strong>
+              <p>Publish a resource or check work awaiting review.</p>
+            </aside>
+          </section>
+          <div id="teacher-stats" class="admin-stats"></div>
+        </section>
+        <section id="courses" class="teacher-view hidden">
+          <section class="management-panel">
+            <div class="management-heading">
+              <div>
+                <h2>My courses</h2>
+                <p>
+                  New and edited courses are sent for organization approval.
+                </p>
+              </div>
+            </div>
+            <form id="course-form" class="teacher-form">
+              <input
+                name="title"
+                maxlength="180"
+                placeholder="Course title"
+                required
+              /><input
+                name="description"
+                maxlength="10000"
+                placeholder="Course description"
+              /><select name="categoryId" id="course-category">
+                <option value="">Uncategorized</option></select
+              ><button>Create course</button>
+            </form>
+            <div id="course-list" class="teacher-list"></div>
+          </section>
+          <section class="management-panel">
+            <h2>Share learning resources</h2>
+            <p>
+              Publish lessons and notes, upload PDFs, or share a video link for
+              any course.
+            </p>
+            <form id="content-form" class="teacher-form">
+              <select name="courseId" class="course-select" required></select
+              ><input
+                name="title"
+                maxlength="180"
+                placeholder="Resource title"
+                required
+              /><select name="type" id="content-type">
+                <option value="LESSON">Lesson</option>
+                <option value="NOTE">Note</option>
+                <option value="PDF">PDF file</option>
+                <option value="VIDEO">Video link</option></select
+              ><textarea
+                name="body"
+                maxlength="10000"
+                placeholder="Resource body (supports markdown like **bold**, *italics*, `code`)"
+                style="grid-column: 1 / -1; min-height: 90px; resize: vertical"
+              ></textarea
+              ><input
+                id="content-pdf-file"
+                name="file"
+                type="file"
+                accept="application/pdf,.pdf"
+                class="hidden"
+                style="grid-column: 1 / -1"
+              /><small
+                id="content-upload-help"
+                class="hidden"
+                style="grid-column: 1 / -1; color: var(--muted)"
+                >PDF files up to 20 MB.</small
+              >
+              <div
+                style="
+                  grid-column: 1 / -1;
+                  display: flex;
+                  gap: 8px;
+                  justify-content: end;
+                "
+              >
+                <button
+                  type="button"
+                  id="cancel-content-edit"
+                  class="table-action"
+                  style="
+                    display: none;
+                    margin: 0;
+                    min-height: 47px;
+                    padding: 0 20px;
+                  "
+                >
+                  Cancel Edit</button
+                ><button id="submit-content-btn" style="margin: 0">
+                  Share resource
+                </button>
+              </div>
+            </form>
+            <div id="content-list" class="teacher-list"></div>
+          </section>
+        </section>
+        <section id="assessments" class="teacher-view hidden">
+          <section class="management-panel">
+            <h2>Assignments</h2>
+            <form id="assignment-form" class="teacher-form">
+              <select name="courseId" class="course-select" required></select
+              ><input
+                name="title"
+                maxlength="180"
+                placeholder="Assignment title"
+                required
+              /><input name="dueAt" type="datetime-local" /><input
+                name="maxScore"
+                type="number"
+                min="1"
+                value="100"
+                required
+              /><textarea
+                name="instructions"
+                maxlength="10000"
+                placeholder="Assignment instructions (supports markdown like **bold**, *italics*, `code`)"
+                style="grid-column: 1 / -1; min-height: 90px; resize: vertical"
+              ></textarea>
+              <div
+                style="
+                  grid-column: 1 / -1;
+                  display: flex;
+                  gap: 8px;
+                  justify-content: end;
+                "
+              >
+                <button
+                  type="button"
+                  id="cancel-assignment-edit"
+                  class="table-action"
+                  style="
+                    display: none;
+                    margin: 0;
+                    min-height: 47px;
+                    padding: 0 20px;
+                  "
+                >
+                  Cancel Edit</button
+                ><button id="submit-assignment-btn" style="margin: 0">
+                  Create assignment
+                </button>
+              </div>
+            </form>
+            <div id="assignment-list" class="teacher-list"></div>
+            <section
+              id="assignment-question-panel"
+              class="management-panel sub-panel hidden"
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 15px;
+                "
+              >
+                <h3>Add assignment question</h3>
+                <button
+                  id="close-assignment-questions"
+                  class="table-action delete"
+                  style="padding: 6px 12px; margin: 0; min-height: auto"
+                  type="button"
+                >
+                  Close Panel
+                </button>
+              </div>
+              <form id="assignment-question-form" class="teacher-form">
+                <input id="question-assignment-id" type="hidden" /><input
+                  name="questionText"
+                  maxlength="10000"
+                  placeholder="Question text"
+                  required
+                  style="grid-column: 1 / -1"
+                />
+                <div
+                  style="
+                    grid-column: 1 / -1;
+                    display: flex;
+                    justify-content: end;
+                  "
+                >
+                  <button style="margin: 0">Add question</button>
+                </div>
+              </form>
+              <div id="assignment-question-list" class="teacher-list"></div>
+            </section>
+          </section>
+          <section class="management-panel">
+            <h2>Quizzes and question bank</h2>
+            <form id="quiz-form" class="teacher-form">
+              <select name="courseId" class="course-select" required></select
+              ><input
+                name="title"
+                maxlength="180"
+                placeholder="Quiz title"
+                required
+              /><input
+                name="description"
+                maxlength="5000"
+                placeholder="Quiz instructions (optional)"
+              /><button>Create quiz</button>
+            </form>
+            <div id="quiz-list" class="teacher-list"></div>
+            <section
+              id="question-panel"
+              class="management-panel sub-panel hidden"
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 15px;
+                "
+              >
+                <h3>Add quiz question</h3>
+                <button
+                  id="close-questions"
+                  class="table-action delete"
+                  style="padding: 6px 12px; margin: 0; min-height: auto"
+                  type="button"
+                >
+                  Close Panel
+                </button>
+              </div>
+              <form id="question-form" class="teacher-form">
+                <input id="question-quiz-id" type="hidden" /><input
+                  name="questionText"
+                  maxlength="10000"
+                  placeholder="Question text"
+                  required
+                  style="grid-column: 1 / -1"
+                />
+                <section class="quiz-options-field" aria-labelledby="quiz-options-label">
+                  <div class="quiz-options-heading">
+                    <div>
+                      <p id="quiz-options-label">Answer options</p>
+                      <small>Add at least two options, then select the correct one.</small>
+                    </div>
+                    <button id="add-quiz-option" class="table-action" type="button">+ Add option</button>
+                  </div>
+                  <div id="quiz-option-list" class="quiz-option-list"></div>
+                </section>
+                <label class="correct-answer-field" for="correct-answer-select">
+                  Correct answer
+                  <select id="correct-answer-select" name="correctAnswer" required>
+                    <option value="">Select the correct option</option>
+                  </select>
+                </label>
+                <label class="points-field" for="question-points">
+                  Points
+                  <input
+                    id="question-points"
+                    name="points"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="1"
+                    required
+                  />
+                </label>
+                <button type="submit" style="margin: 0">Add question</button>
+              </form>
+              <div id="question-list" class="teacher-list"></div>
+            </section>
+          </section>
+        </section>
+        <section id="submissions" class="teacher-view hidden">
+          <section class="management-panel">
+            <h2>Assignment grading</h2>
+            <p>
+              Select an assignment, then one student. Only that student's work
+              and grading controls will be shown.
+            </p>
+            <div class="teacher-form">
+              <select id="submission-assignment">
+                <option value="">Select assignment</option></select
+              ><select id="assignment-submission-student" disabled>
+                <option value="">Select student</option>
+              </select>
+            </div>
+            <div id="submission-list" class="teacher-list"></div>
+          </section>
+          <section class="management-panel" style="margin-top: 22px">
+            <h2>Quiz results</h2>
+            <p>
+              Select a quiz, then one student to review only their submitted
+              answers.
+            </p>
+            <div class="teacher-form">
+              <select id="quiz-submission-quiz">
+                <option value="">Select quiz</option></select
+              ><select id="quiz-submission-student" disabled>
+                <option value="">Select student</option>
+              </select>
+            </div>
+            <div id="quiz-submission-list" class="teacher-list"></div>
+          </section>
+        </section>
+        <section id="analytics" class="teacher-view hidden">
+          <section class="management-panel">
+            <h2>Course performance</h2>
+            <p>
+              Track engagement, shared resources, assessment activity, and
+              average assignment scores.
+            </p>
+            <div class="analytics-control">
+              <label for="analytics-course">Choose a course</label>
+              <select id="analytics-course" class="course-select">
+                <option value="">Select course</option>
+              </select>
+            </div>
+            <div id="analytics-results" class="analytics-results" aria-live="polite">
+              <div class="analytics-empty">
+                <strong>Select a course to view its performance.</strong>
+                <span>Enrollment, assessment activity, and average scores will appear here.</span>
+              </div>
+            </div>
+          </section>
+        </section>
+        <section id="announcements" class="teacher-view hidden">
+          <section class="management-panel">
+            <h2>Publish an announcement</h2>
+            <form id="announcement-form" class="teacher-form">
+              <select name="courseId" class="course-select" required></select
+              ><input
+                name="title"
+                maxlength="180"
+                placeholder="Announcement title"
+                required
+              /><input
+                name="message"
+                maxlength="10000"
+                placeholder="Message"
+                required
+              /><button>Publish announcement</button>
+            </form>
+            <div id="announcement-list" class="teacher-list"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="teacher.js"></script>
+  </body>
+</html>

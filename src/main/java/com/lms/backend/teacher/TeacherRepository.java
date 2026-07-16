@@ -77,6 +77,41 @@ public class TeacherRepository {
     public boolean publishQuiz(Long quizId, Long teacherId) { return jdbc.sql("UPDATE quizzes q JOIN courses c ON c.id=q.course_id SET q.status='PUBLISHED',q.published_at=CURRENT_TIMESTAMP WHERE q.id=:quizId AND c.teacher_id=:teacherId AND EXISTS (SELECT 1 FROM quiz_questions qq WHERE qq.quiz_id=q.id)").param("quizId",quizId).param("teacherId",teacherId).update() > 0; }
     public TeacherCourseAnalyticsResponse analytics(Long courseId) { return jdbc.sql("SELECT c.id,(SELECT COUNT(*) FROM enrollments e WHERE e.course_id=c.id),(SELECT COUNT(*) FROM course_content cc WHERE cc.course_id=c.id),(SELECT COUNT(*) FROM assignments a WHERE a.course_id=c.id),(SELECT COUNT(*) FROM assignment_submissions s JOIN assignments a ON a.id=s.assignment_id WHERE a.course_id=c.id),(SELECT COUNT(*) FROM quizzes q WHERE q.course_id=c.id),(SELECT COUNT(*) FROM quiz_questions qq JOIN quizzes q ON q.id=qq.quiz_id WHERE q.course_id=c.id),COALESCE((SELECT AVG(s.score) FROM assignment_submissions s JOIN assignments a ON a.id=s.assignment_id WHERE a.course_id=c.id),0) FROM courses c WHERE c.id=:courseId").param("courseId",courseId).query((rs,n) -> new TeacherCourseAnalyticsResponse(rs.getLong(1),rs.getLong(2),rs.getLong(3),rs.getLong(4),rs.getLong(5),rs.getLong(6),rs.getLong(7),rs.getDouble(8))).single(); }
     public List<java.util.Map<String,Object>> submissions(Long assignmentId, Long teacherId) { return jdbc.sql("SELECT s.id,u.full_name student_name,u.email,s.submitted_at,s.content,s.score,s.feedback,a.max_score FROM assignment_submissions s JOIN assignments a ON a.id=s.assignment_id JOIN courses c ON c.id=a.course_id JOIN users u ON u.id=s.student_id WHERE s.assignment_id=:assignmentId AND c.teacher_id=:teacherId ORDER BY s.submitted_at DESC").param("assignmentId",assignmentId).param("teacherId",teacherId).query().listOfRows(); }
+    public List<java.util.Map<String, Object>> studentProgress(Long teacherId) {
+        List<java.util.Map<String, Object>> students = jdbc.sql("""
+                SELECT DISTINCT u.id, u.full_name, u.email
+                FROM users u
+                JOIN enrollments e ON e.student_id = u.id
+                JOIN courses c ON c.id = e.course_id
+                WHERE c.teacher_id = :teacherId
+                ORDER BY u.full_name
+                """).param("teacherId", teacherId).query().listOfRows();
+
+        for (java.util.Map<String, Object> student : students) {
+            Long studentId = ((Number) student.get("id")).longValue();
+            List<java.util.Map<String, Object>> assignmentRows = jdbc.sql("""
+                    SELECT a.id, a.title, c.title AS course_title, a.max_score, s.submitted_at, s.score, s.feedback
+                    FROM assignments a
+                    JOIN courses c ON c.id = a.course_id
+                    JOIN enrollments e ON e.course_id = c.id AND e.student_id = :studentId
+                    LEFT JOIN assignment_submissions s ON s.assignment_id = a.id AND s.student_id = :studentId
+                    WHERE c.teacher_id = :teacherId AND a.status = 'PUBLISHED'
+                    ORDER BY c.title, a.due_at IS NULL, a.due_at
+                    """).param("studentId", studentId).param("teacherId", teacherId).query().listOfRows();
+            List<java.util.Map<String, Object>> quizRows = jdbc.sql("""
+                    SELECT q.id, q.title, c.title AS course_title, s.submitted_at, s.score
+                    FROM quizzes q
+                    JOIN courses c ON c.id = q.course_id
+                    JOIN enrollments e ON e.course_id = c.id AND e.student_id = :studentId
+                    LEFT JOIN quiz_submissions s ON s.quiz_id = q.id AND s.student_id = :studentId
+                    WHERE c.teacher_id = :teacherId AND q.status = 'PUBLISHED'
+                    ORDER BY c.title, q.published_at DESC
+                    """).param("studentId", studentId).param("teacherId", teacherId).query().listOfRows();
+            student.put("assignments", assignmentRows);
+            student.put("quizzes", quizRows);
+        }
+        return students;
+    }
     public void grade(Long submissionId, TeacherRequests.Grade r, Long teacherId) { jdbc.sql("UPDATE assignment_submissions s JOIN assignments a ON a.id=s.assignment_id JOIN courses c ON c.id=a.course_id SET s.score=:score,s.feedback=:feedback,s.graded_at=CURRENT_TIMESTAMP WHERE s.id=:id AND c.teacher_id=:teacherId").param("id",submissionId).param("teacherId",teacherId).param("score",r.score()).param("feedback",blankToNull(r.feedback())).update(); }
     public boolean canGrade(Long submissionId, double score, Long teacherId) {
         return jdbc.sql("SELECT COUNT(*) FROM assignment_submissions s JOIN assignments a ON a.id=s.assignment_id JOIN courses c ON c.id=a.course_id WHERE s.id=:id AND c.teacher_id=:teacherId AND :score <= a.max_score")
@@ -154,6 +189,19 @@ public class TeacherRepository {
                 """)
                 .param("submissionId", submissionId)
                 .query().listOfRows();
+    }
+
+    public boolean ownsQuizSubmission(Long submissionId, Long teacherId) {
+        return jdbc.sql("""
+                SELECT COUNT(*)
+                FROM quiz_submissions s
+                JOIN quizzes q ON q.id = s.quiz_id
+                JOIN courses c ON c.id = q.course_id
+                WHERE s.id = :submissionId AND c.teacher_id = :teacherId
+                """)
+                .param("submissionId", submissionId)
+                .param("teacherId", teacherId)
+                .query(Long.class).single() > 0;
     }
 
     private CourseStatus courseStatus(String value) {

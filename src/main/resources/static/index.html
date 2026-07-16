@@ -3,148 +3,202 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Adaptive Learning</title>
+    <meta
+      name="description"
+      content="Hive Mind is a connected learning workspace for students, teachers, and institutions."
+    />
+    <title>Hive Mind | Learning, beautifully organized</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <main>
-      <div class="shell">
-        <section class="hero" aria-labelledby="hero-title">
-          <nav class="nav" aria-label="Brand">
-            <a class="brand" href="/">Adaptive <span>Learning</span><b>.</b></a>
-            <p class="workspace">Personal learning space</p>
-          </nav>
-          <div class="hero-copy">
-            <span class="eyebrow">Your learning space</span>
-            <h1 id="hero-title">Learn more.<br />Stress <em>less.</em></h1>
-            <p class="intro">
-              A focused space that adapts to how you learn, teach, and grow
-              every day.
-            </p>
-          </div>
-          <article class="course-card course">
-            <div class="icon" aria-hidden="true">&#8984;</div>
-            <h2>Java Programming</h2>
-            <p>Course progress</p>
-            <div class="progress"><span></span></div>
-          </article>
-          <article class="course-card study">
-            <p>This week</p>
-            <div class="hours">12h</div>
-            <p class="trend">&#8593; Learning time</p>
-          </article>
-        </section>
-
-        <section
-          id="auth-card"
-          class="login-panel"
-          aria-labelledby="auth-title"
+  <body class="landing-page landing-page-v2">
+    <header class="landing-header">
+      <a class="brand" href="/" aria-label="Hive Mind home"
+        >Hive <span>Mind</span><b>.</b></a
+      >
+      <nav class="landing-nav" aria-label="Main navigation">
+        <a href="#how-it-works">How it works</a>
+        <a href="#for-everyone">Built for everyone</a>
+        <a href="login.html" class="nav-sign-in"
+          >Sign in <span aria-hidden="true">→</span></a
         >
-          <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-          <div class="auth-header">
-            <p class="panel-label">Account access</p>
-            <h2 id="auth-title">Welcome back.</h2>
-            <p id="auth-description">
-              Sign in and continue where you left off.
-            </p>
-          </div>
-          <div class="tabs" role="tablist" aria-label="Account options">
-            <button class="active" data-view="login" type="button">Login</button
-            ><button data-view="register" type="button">Register</button>
-          </div>
-          <form id="login-form" class="auth-form">
-            <div class="field">
-              <label for="login-email">Email address</label
-              ><input
-                id="login-email"
-                type="email"
-                name="email"
-                autocomplete="email"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <div class="field">
-              <label for="login-password">Password</label
-              ><input
-                id="login-password"
-                type="password"
-                name="password"
-                autocomplete="current-password"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-            <button type="submit">
-              Continue learning <span aria-hidden="true">&#8594;</span>
-            </button>
-          </form>
-          <form id="register-form" class="auth-form hidden">
-            <div class="field">
-              <label for="full-name">Full name</label
-              ><input
-                id="full-name"
-                type="text"
-                name="fullName"
-                maxlength="100"
-                autocomplete="name"
-                placeholder="Your full name"
-                required
-              />
-            </div>
-            <div class="field">
-              <label for="register-email">Email address</label
-              ><input
-                id="register-email"
-                type="email"
-                name="email"
-                autocomplete="email"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <div class="form-row">
-              <div class="field">
-                <label for="register-password">Password</label
-                ><input
-                  id="register-password"
-                  type="password"
-                  name="password"
-                  minlength="8"
-                  autocomplete="new-password"
-                  placeholder="8+ characters"
-                  required
-                />
-              </div>
-              <div class="field">
-                <label for="role">Register as</label
-                ><select id="role" name="role" required>
-                  <option value="STUDENT">Student</option>
-                  <option value="TEACHER">Teacher</option>
-                  <option value="ORGANIZATION">Organization / institution</option>
-                </select>
-              </div>
-            </div>
-            <div id="institution-name-field" class="field hidden">
-              <label for="institution-name">Institution name</label>
-              <input id="institution-name" type="text" maxlength="150" name="organizationName" placeholder="Your school or institution name" />
-            </div>
-            <div class="field">
-              <label for="register-organization-id">Organization</label>
-              <select id="register-organization-id" name="organizationId" required><option value="">Choose your organization</option></select>
-              <small id="organization-selection-help">Select the institution where you will learn or teach.</small>
-            </div>
-            <button type="submit">
-              Create account <span aria-hidden="true">&#8594;</span>
-            </button>
-          </form>
-          <p id="message" class="message" aria-live="polite" role="status"></p>
-          <p class="footer">
-            Adaptive Learning &middot; Your growth, your pace
+      </nav>
+    </header>
+
+    <main>
+      <section class="landing-hero hero-v2" aria-labelledby="hero-title">
+        <div class="hero-copy-v2">
+          <p class="landing-kicker">
+            <span></span> The learning operating system
           </p>
-        </section>
+          <h1 id="hero-title">Make every <em>learning moment</em> matter.</h1>
+          <p class="landing-lead">
+            A beautifully focused space where learners grow with confidence,
+            educators guide with clarity, and every institution moves forward
+            together.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-action" href="register.html"
+              >Start your journey <span aria-hidden="true">→</span></a
+            >
+            <a class="text-action" href="#how-it-works"
+              >See how it works <span aria-hidden="true">↓</span></a
+            >
+          </div>
+          <div class="hero-proof" aria-label="Hive Mind benefits">
+            <div>
+              <span class="proof-icon" aria-hidden="true">&#10003;</span>
+              <p>
+                <strong>Clear next steps</strong
+                ><small>Always know what to do next.</small>
+              </p>
+            </div>
+            <div>
+              <span class="proof-icon" aria-hidden="true">&#10022;</span>
+              <p>
+                <strong>Progress together</strong
+                ><small>Built for every learning role.</small>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="hero-art-wrap">
+          <img
+            class="hero-art"
+            src="assets/learning-hero.png"
+            alt="Learner working with a luminous digital study space"
+          />
+          <article
+            class="floating-card floating-card-progress"
+            aria-hidden="true"
+          >
+            <span>Learning streak</span>
+            <strong>12 days</strong>
+            <small>Keep your momentum</small>
+          </article>
+          <article
+            class="floating-card floating-card-course"
+            aria-hidden="true"
+          >
+            <span class="orb">&#10022;</span>
+            <p>Next lesson<br />ready for you</p>
+            <b>+1</b>
+          </article>
+        </div>
+      </section>
+
+      <div class="signal-strip" aria-label="Hive Mind platform highlights">
+        <span>LEARN WITH CLARITY</span><i></i><span>TEACH WITH CONFIDENCE</span
+        ><i></i><span>GROW TOGETHER</span>
       </div>
+
+      <section
+        id="how-it-works"
+        class="landing-section flow-section"
+        aria-labelledby="flow-title"
+      >
+        <div class="section-heading">
+          <p class="landing-kicker">Built around real progress</p>
+          <h2 id="flow-title">
+            A better rhythm from first lesson to next level.
+          </h2>
+          <p>
+            Hive Mind turns scattered tasks into a calm, connected learning
+            experience that feels obvious from the first click.
+          </p>
+        </div>
+        <div class="flow-grid">
+          <article>
+            <span class="feature-number">01</span>
+            <div class="feature-icon" aria-hidden="true">01</div>
+            <h3>Find your focus</h3>
+            <p>
+              A clear view of what is next helps every learner begin with
+              purpose, not guesswork.
+            </p>
+            <span class="feature-link">Your path, simplified</span>
+          </article>
+          <article>
+            <span class="feature-number">02</span>
+            <div class="feature-icon" aria-hidden="true">02</div>
+            <h3>Build momentum</h3>
+            <p>
+              Resources, assignments, and milestones live together so great
+              learning stays in motion.
+            </p>
+            <span class="feature-link">Progress you can feel</span>
+          </article>
+          <article>
+            <span class="feature-number">03</span>
+            <div class="feature-icon" aria-hidden="true">03</div>
+            <h3>See growth happen</h3>
+            <p>
+              Thoughtful insights make effort visible and give every person a
+              reason to keep going.
+            </p>
+            <span class="feature-link">Every win counts</span>
+          </article>
+        </div>
+      </section>
+
+      <section
+        id="for-everyone"
+        class="landing-section audience-section"
+        aria-labelledby="audience-title"
+      >
+        <div class="audience-copy">
+          <p class="landing-kicker">One platform, many perspectives</p>
+          <h2 id="audience-title">
+            Made for the people who make <em>learning happen.</em>
+          </h2>
+          <p>
+            Every role gets a workspace that feels intentional: simple enough to
+            move quickly, rich enough to do meaningful work.
+          </p>
+          <a class="text-action audience-action" href="register.html"
+            >Join the Hive Mind <span aria-hidden="true">→</span></a
+          >
+        </div>
+        <div class="audience-list">
+          <article>
+            <span class="audience-icon student-icon">⌁</span>
+            <div>
+              <p class="audience-tag">For learners</p>
+              <h3>Stay inspired, not overwhelmed.</h3>
+              <p>
+                Turn classes, resources, and deadlines into an encouraging daily
+                flow.
+              </p>
+            </div>
+          </article>
+          <article>
+            <span class="audience-icon teacher-icon">✎</span>
+            <div>
+              <p class="audience-tag">For educators</p>
+              <h3>Teach with a clear view.</h3>
+              <p>
+                Shape courses, share knowledge, and understand how every learner
+                is doing.
+              </p>
+            </div>
+          </article>
+          <article>
+            <span class="audience-icon org-icon">◫</span>
+            <div>
+              <p class="audience-tag">For institutions</p>
+              <h3>Bring every signal together.</h3>
+              <p>
+                Create a learning culture that is connected, measurable, and
+                ready to grow.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
     </main>
-    <script src="app.js"></script>
+    <footer class="landing-footer">
+      <a class="brand" href="/">Hive <span>Mind</span><b>.</b></a>
+      <p>© 2026 Hive Mind. Built for meaningful progress.</p>
+      <a href="login.html">Sign in</a>
+    </footer>
   </body>
 </html>
