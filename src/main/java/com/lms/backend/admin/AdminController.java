@@ -3,6 +3,8 @@ package com.lms.backend.admin;
 import java.util.List;
 
 import com.lms.backend.auth.AuthResponse;
+import com.lms.backend.audit.AuditAction;
+import com.lms.backend.audit.AuditRepository;
 import com.lms.backend.user.AccountStatus;
 import com.lms.backend.user.Role;
 import com.lms.backend.user.User;
@@ -31,20 +33,22 @@ public class AdminController {
     private static final String USER_SESSION_KEY = "authenticatedUser";
     private final UserRepository users;
     private final AdminManagementRepository management;
+    private final AuditRepository audit;
 
-    public AdminController(UserRepository users, AdminManagementRepository management) {
+    public AdminController(UserRepository users, AdminManagementRepository management, AuditRepository audit) {
         this.users = users;
         this.management = management;
+        this.audit = audit;
     }
 
-    @GetMapping("/summary")
-    public AdminSummaryResponse summary(HttpSession session) {
-        AuthResponse organization = requireOrganization(session);
-        List<User> allUsers = users.findAll(null, organization.organizationId());
-        return new AdminSummaryResponse(allUsers.size(), count(allUsers, Role.STUDENT, AccountStatus.ACTIVE),
-                count(allUsers, Role.TEACHER, AccountStatus.ACTIVE), count(allUsers, Role.TEACHER, AccountStatus.PENDING),
-                management.countCourses(organization.organizationId()), management.countCourses(CourseStatus.PENDING, organization.organizationId()), management.countEnrollments(organization.organizationId()),
-                management.countQuizzes(organization.organizationId()));
+    @GetMapping("/activity")
+    public List<java.util.Map<String, Object>> activity(HttpSession session) {
+        return audit.recentForOrganization(requireOrganization(session).organizationId(), 12);
+    }
+
+    @GetMapping("/audit")
+    public List<java.util.Map<String, Object>> audit(@RequestParam(required = false) AuditAction action, HttpSession session) {
+        return audit.auditLog(requireOrganization(session).organizationId(), action, 200);
     }
 
     @GetMapping("/users")
@@ -131,11 +135,12 @@ public class AdminController {
         AuthResponse organization = requireOrganization(session);
         AdminCategoryResponse existing = requireCategory(id, organization.organizationId());
         String name = request.name().trim();
+        String description = cleanDescription(request.description());
         if (management.findCategories(organization.organizationId()).stream().anyMatch(category -> !category.id().equals(id) && category.name().equalsIgnoreCase(name))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A category with this name already exists.");
         }
-        management.updateCategory(id, name, cleanDescription(request.description()), organization.organizationId());
-        return new AdminCategoryResponse(id, name, cleanDescription(request.description()), existing.courseCount());
+        management.updateCategory(id, name, description, organization.organizationId());
+        return new AdminCategoryResponse(id, name, description, existing.courseCount());
     }
 
     @DeleteMapping("/categories/{id}")
@@ -184,6 +189,25 @@ public class AdminController {
         requireSameOrganization(user, organization);
         rejectOrganizationAccountChange(user);
         users.updateStatus(id, status, organization.organizationId());
+        AuditAction action = switch (user.role()) {
+            case TEACHER -> switch (status) {
+                case ACTIVE -> user.status() == AccountStatus.SUSPENDED ? AuditAction.TEACHER_ACTIVATED : AuditAction.TEACHER_APPROVED;
+                case REJECTED -> AuditAction.TEACHER_REJECTED;
+                case SUSPENDED -> AuditAction.TEACHER_SUSPENDED;
+                default -> null;
+            };
+            case STUDENT -> switch (status) {
+                case ACTIVE -> user.status() == AccountStatus.SUSPENDED ? AuditAction.STUDENT_ACTIVATED : AuditAction.STUDENT_APPROVED;
+                case REJECTED -> AuditAction.STUDENT_REJECTED;
+                case SUSPENDED -> AuditAction.STUDENT_SUSPENDED;
+                default -> null;
+            };
+            default -> null;
+        };
+        if (action != null) {
+            audit.record(action, organization.organizationId(), organization.id(), organization.fullName(),
+                    user.role().name(), user.fullName(), null, user.role() == Role.STUDENT ? id : null, null);
+        }
         return AdminUserResponse.from(new User(user.id(), user.fullName(), user.email(), user.passwordHash(), user.role(), status, user.organizationId()));
     }
 
@@ -192,6 +216,16 @@ public class AdminController {
         AdminCourseResponse course = management.findCourse(id, organization.organizationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found."));
         management.updateCourseStatus(id, status, organization.organizationId());
+        AuditAction action = switch (status) {
+            case APPROVED -> AuditAction.COURSE_APPROVED;
+            case REJECTED -> AuditAction.COURSE_REJECTED;
+            case SUSPENDED -> AuditAction.COURSE_SUSPENDED;
+            default -> null;
+        };
+        if (action != null) {
+            audit.record(action, organization.organizationId(), organization.id(), organization.fullName(),
+                    "COURSE", course.title(), id, null, null);
+        }
         return new AdminCourseResponse(course.id(), course.title(), course.description(), course.teacherId(), course.teacherName(),
                 course.categoryId(), course.categoryName(), status, course.createdAt());
     }

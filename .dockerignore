@@ -1,0 +1,5 @@
+.git
+target
+web
+uploads
+*.log

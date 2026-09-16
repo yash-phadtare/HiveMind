@@ -50,4 +50,15 @@ public class ContentFileStorage {
             throw new IllegalArgumentException("File not found.", exception);
         }
     }
+
+    public void delete(String filename) {
+        if (filename == null || filename.isBlank()) return;
+        Path file = uploadDirectory.resolve(Path.of(filename).getFileName().toString()).normalize();
+        if (!file.startsWith(uploadDirectory)) return;
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException ignored) {
+            // Best-effort cleanup; an orphaned file is preferable to failing the request.
+        }
+    }
 }

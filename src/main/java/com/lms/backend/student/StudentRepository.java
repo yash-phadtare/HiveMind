@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.lms.backend.audit.AuditAction;
+import com.lms.backend.audit.AuditRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -16,54 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudentRepository {
     private final JdbcClient jdbc;
     private final JdbcTemplate jdbcTemplate;
+    private final AuditRepository audit;
 
-    public StudentRepository(JdbcClient jdbc, JdbcTemplate jdbcTemplate) {
+    public StudentRepository(JdbcClient jdbc, JdbcTemplate jdbcTemplate, AuditRepository audit) {
         this.jdbc = jdbc;
         this.jdbcTemplate = jdbcTemplate;
-    }
-
-    public Map<String, Object> dashboard(Long studentId, Long organizationId) {
-        Long enrolledCoursesCount = jdbc.sql("SELECT COUNT(*) FROM enrollments WHERE student_id = :studentId")
-                .param("studentId", studentId).query(Long.class).single();
-
-        Long availableCoursesCount = jdbc.sql("""
-                SELECT COUNT(*) FROM courses
-                WHERE organization_id = :organizationId AND status = 'APPROVED'
-                  AND id NOT IN (SELECT course_id FROM enrollments WHERE student_id = :studentId)
-                """)
-                .param("organizationId", organizationId)
-                .param("studentId", studentId)
-                .query(Long.class).single();
-
-        Long pendingAssignmentsCount = jdbc.sql("""
-                SELECT COUNT(*) FROM assignments a
-                JOIN enrollments e ON e.course_id = a.course_id
-                LEFT JOIN assignment_submissions s ON s.assignment_id = a.id AND s.student_id = :studentId
-                WHERE e.student_id = :studentId AND a.status = 'PUBLISHED' AND s.id IS NULL
-                """)
-                .param("studentId", studentId).query(Long.class).single();
-
-        Long completedAssignmentsCount = jdbc.sql("SELECT COUNT(*) FROM assignment_submissions WHERE student_id = :studentId")
-                .param("studentId", studentId).query(Long.class).single();
-
-        Double averageScore = jdbc.sql("SELECT COALESCE(AVG(score), 0.0) FROM assignment_submissions WHERE student_id = :studentId")
-                .param("studentId", studentId).query(Double.class).single();
-
-        Long completedQuizzesCount = jdbc.sql("SELECT COUNT(*) FROM quiz_submissions WHERE student_id = :studentId")
-                .param("studentId", studentId).query(Long.class).single();
-
-        Double averageQuizScore = jdbc.sql("SELECT COALESCE(AVG(score), 0.0) FROM quiz_submissions WHERE student_id = :studentId")
-                .param("studentId", studentId).query(Double.class).single();
-
-        return Map.of(
-                "enrolledCourses", enrolledCoursesCount,
-                "availableCourses", availableCoursesCount,
-                "pendingAssignments", pendingAssignmentsCount,
-                "completedAssignments", completedAssignmentsCount,
-                "averageScore", averageScore,
-                "completedQuizzes", completedQuizzesCount,
-                "averageQuizScore", averageQuizScore
-        );
+        this.audit = audit;
     }
 
     public List<Map<String, Object>> courses(Long studentId, Long organizationId) {
@@ -91,10 +51,13 @@ public class StudentRepository {
         if (!exists) {
             throw new IllegalArgumentException("Course not found or not approved.");
         }
+        String title = jdbc.sql("SELECT title FROM courses WHERE id = :courseId")
+                .param("courseId", courseId).query(String.class).single();
         jdbc.sql("INSERT IGNORE INTO enrollments (student_id, course_id) VALUES (:studentId, :courseId)")
                 .param("studentId", studentId)
                 .param("courseId", courseId)
                 .update();
+        audit.record(AuditAction.ENROLLMENT, organizationId, studentId, null, "COURSE", title, courseId, studentId, null);
     }
 
     public List<Map<String, Object>> content(Long studentId, Long courseId) {
@@ -210,6 +173,14 @@ public class StudentRepository {
                     .param("content", content)
                     .update();
         }
+
+        Map<String, Object> assignment = jdbc.sql("""
+                SELECT a.title, a.course_id, c.organization_id
+                FROM assignments a JOIN courses c ON c.id = a.course_id
+                WHERE a.id = :assignmentId
+                """).param("assignmentId", assignmentId).query().listOfRows().stream().findFirst().orElse(Map.of());
+        audit.record(AuditAction.ASSIGNMENT_SUBMITTED, numberlong(assignment.get("organization_id")), studentId, null,
+                "ASSIGNMENT", (String) assignment.get("title"), numberlong(assignment.get("course_id")), studentId, null);
 
         for (Map.Entry<String, String> entry : answers.entrySet()) {
             if (entry.getKey().equals("content")) continue;
@@ -417,6 +388,15 @@ public class StudentRepository {
                 .param("submissionId", submissionId)
                 .update();
 
+        Map<String, Object> quiz = jdbc.sql("""
+                SELECT q.title, q.course_id, c.organization_id
+                FROM quizzes q JOIN courses c ON c.id = q.course_id
+                WHERE q.id = :quizId
+                """).param("quizId", quizId).query().listOfRows().stream().findFirst().orElse(Map.of());
+        int percentage = maxPossibleScore == 0.0 ? 0 : (int) Math.round(100.0 * totalScore / maxPossibleScore);
+        audit.record(AuditAction.QUIZ_COMPLETED, numberlong(quiz.get("organization_id")), studentId, null,
+                "QUIZ", (String) quiz.get("title"), numberlong(quiz.get("course_id")), studentId, percentage + "%");
+
         return Map.of(
                 "submissionId", submissionId,
                 "score", totalScore,
@@ -471,5 +451,13 @@ public class StudentRepository {
         java.util.HashMap<String, Object> result = new java.util.HashMap<>(submission.get());
         result.put("answers", processedAnswers);
         return result;
+    }
+
+    public List<Map<String, Object>> activity(Long studentId, Long organizationId) {
+        return audit.recentForStudent(studentId, organizationId, 10);
+    }
+
+    private Long numberlong(Object value) {
+        return value instanceof Number number ? number.longValue() : null;
     }
 }

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.lms.backend.auth.AuthResponse;
+import com.lms.backend.audit.AuditAction;
+import com.lms.backend.audit.AuditRepository;
 import com.lms.backend.content.ContentFileStorage;
 import com.lms.backend.user.Role;
 import jakarta.servlet.http.HttpSession;
@@ -27,9 +29,10 @@ public class TeacherController {
     private static final String USER_SESSION_KEY = "authenticatedUser";
     private final TeacherRepository repository;
     private final ContentFileStorage fileStorage;
-    public TeacherController(TeacherRepository repository, ContentFileStorage fileStorage) { this.repository = repository; this.fileStorage = fileStorage; }
+    private final AuditRepository audit;
+    public TeacherController(TeacherRepository repository, ContentFileStorage fileStorage, AuditRepository audit) { this.repository = repository; this.fileStorage = fileStorage; this.audit = audit; }
 
-    @GetMapping("/dashboard") public TeacherDashboardResponse dashboard(HttpSession session) { return repository.dashboard(teacher(session).id()); }
+    @GetMapping("/activity") public List<Map<String, Object>> activity(HttpSession session) { AuthResponse teacher = teacher(session); return repository.activity(teacher.id(), teacher.organizationId()); }
     @GetMapping("/courses") public List<TeacherCourseResponse> courses(HttpSession session) { return repository.courses(teacher(session).id()); }
     @GetMapping("/categories") public List<Map<String, Object>> categories(HttpSession session) {
         return repository.categories(teacher(session).organizationId()).stream()
@@ -37,10 +40,12 @@ public class TeacherController {
     }
     @PostMapping("/courses") public TeacherCourseResponse createCourse(@Valid @RequestBody TeacherRequests.Course request, HttpSession session) {
         AuthResponse teacher = teacher(session); validCategory(request.categoryId(), teacher.organizationId());
-        return repository.course(repository.createCourse(request, teacher.id(), teacher.organizationId()), teacher.id()).orElseThrow();
+        Long courseId = repository.createCourse(request, teacher.id(), teacher.organizationId());
+        audit.record(AuditAction.COURSE_SUBMITTED, teacher.organizationId(), teacher.id(), teacher.fullName(), "COURSE", request.title().trim(), courseId, null, null);
+        return repository.course(courseId, teacher.id()).orElseThrow();
     }
     @PatchMapping("/courses/{id}") public TeacherCourseResponse updateCourse(@PathVariable Long id, @Valid @RequestBody TeacherRequests.Course request, HttpSession session) {
-        AuthResponse teacher = teacher(session); requireCourse(id, teacher); validCategory(request.categoryId(), teacher.organizationId()); repository.updateCourse(id, request, teacher.id()); return requireCourse(id, teacher);
+        AuthResponse teacher = teacher(session); TeacherCourseResponse course = requireCourse(id, teacher); validCategory(request.categoryId(), teacher.organizationId()); repository.updateCourse(id, request, teacher.id()); audit.record(AuditAction.COURSE_SUBMITTED, teacher.organizationId(), teacher.id(), teacher.fullName(), "COURSE", course.title(), id, null, null); return requireCourse(id, teacher);
     }
     @GetMapping("/courses/{courseId}/content") public List<Map<String,Object>> content(@PathVariable Long courseId, HttpSession session) { requireCourse(courseId, teacher(session)); return repository.content(courseId); }
     @PostMapping("/content") public void addContent(@Valid @RequestBody TeacherRequests.Content request, HttpSession session) { requireCourse(request.courseId(), teacher(session)); repository.addContent(request); }
@@ -67,11 +72,17 @@ public class TeacherController {
     @GetMapping("/assignments/{assignmentId}/submissions") public List<Map<String,Object>> submissions(@PathVariable Long assignmentId, HttpSession session) { return repository.submissions(assignmentId, teacher(session).id()); }
     @GetMapping("/students/progress") public List<Map<String, Object>> studentProgress(HttpSession session) { return repository.studentProgress(teacher(session).id()); }
     @PatchMapping("/submissions/{submissionId}/grade") public void grade(@PathVariable Long submissionId, @Valid @RequestBody TeacherRequests.Grade request, HttpSession session) {
-        Long teacherId = teacher(session).id();
-        if (!repository.canGrade(submissionId, request.score(), teacherId)) {
+        AuthResponse teacher = teacher(session);
+        if (!repository.canGrade(submissionId, request.score(), teacher.id())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Submission not found or score exceeds the assignment maximum.");
         }
-        repository.grade(submissionId, request, teacherId);
+        repository.grade(submissionId, request, teacher.id());
+        java.util.Map<String, Object> context = repository.assignmentContext(submissionId);
+        Number maxScore = (Number) context.get("max_score");
+        int percentage = maxScore != null && maxScore.doubleValue() > 0
+                ? (int) Math.round(request.score() * 100.0 / maxScore.doubleValue()) : 0;
+        audit.record(AuditAction.ASSIGNMENT_GRADED, numberlong(context.get("organization_id")), teacher.id(), teacher.fullName(),
+                "ASSIGNMENT", (String) context.get("title"), numberlong(context.get("course_id")), numberlong(context.get("student_id")), percentage + "%");
     }
     @GetMapping("/assignments/{assignmentId}/questions")
     public List<Map<String, Object>> assignmentQuestions(@PathVariable Long assignmentId, HttpSession session) {
@@ -112,8 +123,18 @@ public class TeacherController {
 
     @GetMapping("/announcements") public List<Map<String,Object>> announcements(HttpSession session) { return repository.announcements(teacher(session).id()); }
     @PostMapping("/announcements") public void announce(@Valid @RequestBody TeacherRequests.Announcement request, HttpSession session) { requireCourse(request.courseId(), teacher(session)); repository.announce(request); }
-    @DeleteMapping("/content/{id}") public void deleteContent(@PathVariable Long id, HttpSession session) { repository.deleteContent(id, teacher(session).id()); }
-    @PatchMapping("/content/{id}") public void updateContent(@PathVariable Long id, @Valid @RequestBody TeacherRequests.Content request, HttpSession session) { repository.updateContent(id, request, teacher(session).id()); }
+    @DeleteMapping("/content/{id}") public void deleteContent(@PathVariable Long id, HttpSession session) {
+        AuthResponse teacher = teacher(session);
+        repository.contentFile(id, teacher.id()).ifPresent(fileStorage::delete);
+        repository.deleteContent(id, teacher.id());
+    }
+    @PatchMapping("/content/{id}") public void updateContent(@PathVariable Long id, @Valid @RequestBody TeacherRequests.Content request, HttpSession session) {
+        AuthResponse teacher = teacher(session);
+        if (request.type() != TeacherRequests.ContentType.PDF) {
+            repository.contentFile(id, teacher.id()).ifPresent(fileStorage::delete);
+        }
+        repository.updateContent(id, request, teacher.id());
+    }
     @DeleteMapping("/quizzes/{id}") public void deleteQuiz(@PathVariable Long id, HttpSession session) { repository.deleteQuiz(id, teacher(session).id()); }
     @DeleteMapping("/assignments/{id}") public void deleteAssignment(@PathVariable Long id, HttpSession session) { repository.deleteAssignment(id, teacher(session).id()); }
     @DeleteMapping("/announcements/{id}") public void deleteAnnouncement(@PathVariable Long id, HttpSession session) { repository.deleteAnnouncement(id, teacher(session).id()); }
@@ -144,4 +165,5 @@ public class TeacherController {
     }
     private TeacherCourseResponse requireCourse(Long id, AuthResponse teacher) { return repository.course(id, teacher.id()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found.")); }
     private void validCategory(Long categoryId, Long organizationId) { if (categoryId != null && repository.categories(organizationId).stream().noneMatch(row -> categoryId.equals(row[0]))) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found."); }
+    private Long numberlong(Object value) { return value instanceof Number number ? number.longValue() : null; }
 }

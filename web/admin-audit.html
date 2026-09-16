@@ -3,19 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Organization Reports | Hive Mind</title>
+    <title>Audit log | Hive Mind</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body
     class="dashboard-page admin-page"
     data-role="ORGANIZATION"
-    data-admin-page="reports"
+    data-admin-page="audit"
   >
     <main class="admin-shell">
       <aside class="admin-sidebar">
-        <a class="brand" href="admin-dashboard.html"
-          >Hive <span>Mind</span><b>.</b></a
-        >
+        <a class="brand" href="admin-dashboard.html">Hive <span>Mind</span><b>.</b></a>
         <p class="sidebar-label">Organization</p>
         <nav class="admin-nav" aria-label="Organization navigation">
           <a href="admin-dashboard.html" data-page="overview">Overview</a
@@ -34,8 +32,8 @@
       <section class="admin-content">
         <header class="admin-topbar">
           <div>
-            <p class="panel-label">Organization reports</p>
-            <h1>Platform activity</h1>
+            <p class="panel-label">Organization audit</p>
+            <h1>Full activity history</h1>
           </div>
           <span class="role-badge" id="user-name">Organization</span>
         </header>
@@ -43,43 +41,31 @@
         <section class="management-panel" data-reveal>
           <div class="management-heading">
             <div>
-              <h2>Analytics snapshot</h2>
-              <p>Only data from your organization is shown here.</p>
+              <h2>Audit log</h2>
+              <p>
+                Every registration, approval, submission and grade across your
+                organization, newest first.
+              </p>
             </div>
-            <a
-              class="report-link"
-              href="/api/organization/reports/analytics.csv"
-              >Download CSV report</a
-            >
-          </div>
-          <div id="analytics-summary" class="analytics-grid"></div>
-          <div class="analytics-chart-row">
-            <section class="analytics-chart-panel" data-reveal>
-              <div class="analytics-panel-heading">
-                <p class="panel-label">Enrollment distribution</p>
-                <h3>Where learning is concentrated</h3>
-              </div>
-              <div class="analytics-donut-layout">
-                <div
-                  id="category-donut"
-                  class="analytics-donut"
-                  role="img"
-                  aria-label="Enrollments by course category"
-                ></div>
-                <ul id="category-legend" class="analytics-legend"></ul>
-              </div>
-            </section>
+            <div class="filter-group">
+              <label class="filter-label" for="audit-action"
+                >Action<select id="audit-action">
+                  <option value="">All actions</option>
+                </select></label
+              >
+            </div>
           </div>
           <div class="user-table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Category</th>
-                  <th>Courses</th>
-                  <th>Enrollments</th>
+                  <th>Action</th>
+                  <th>Actor</th>
+                  <th>What</th>
+                  <th>When</th>
                 </tr>
               </thead>
-              <tbody id="analytics-table"></tbody>
+              <tbody id="audit-table"></tbody>
             </table>
           </div>
         </section>
@@ -87,6 +73,7 @@
     </main>
     <script src="dash-nav.js"></script>
     <script src="animations.js"></script>
+    <script src="activity-feed.js"></script>
     <script src="admin-nav.js"></script>
     <script src="admin.js"></script>
   </body>

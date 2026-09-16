@@ -261,3 +261,69 @@ CREATE TABLE IF NOT EXISTS quiz_answers (
     CONSTRAINT fk_quiz_answers_submission FOREIGN KEY (submission_id) REFERENCES quiz_submissions(id) ON DELETE CASCADE,
     CONSTRAINT fk_quiz_answers_question FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE
 );
+
+-- Table for the audit log: a single source of truth for dashboard activity
+-- feeds and the organization's audit log page.
+CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    organization_id BIGINT,
+    actor_id BIGINT,
+    actor_name VARCHAR(100),
+    action VARCHAR(40) NOT NULL,
+    entity_type VARCHAR(30),
+    entity_name VARCHAR(180),
+    course_id BIGINT,
+    student_id BIGINT,
+    detail VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_audit_org (organization_id, created_at),
+    KEY idx_audit_course (course_id, created_at),
+    KEY idx_audit_student (student_id, created_at),
+    KEY idx_audit_actor (actor_id, created_at)
+);
+
+-- One-time backfill of existing history into the audit log. Each statement only
+-- runs while the table is still empty, so restarts never duplicate events.
+SET @audit_has_data = (SELECT COUNT(*) FROM audit_log);
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT u.organization_id, u.id, u.full_name, 'TEACHER_REGISTERED', 'TEACHER', NULL, NULL, NULL, NULL, u.created_at
+FROM users u WHERE u.role = 'TEACHER' AND @audit_has_data = 0;
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT u.organization_id, u.id, u.full_name, 'STUDENT_REGISTERED', 'STUDENT', NULL, NULL, u.id, NULL, u.created_at
+FROM users u WHERE u.role = 'STUDENT' AND @audit_has_data = 0;
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT c.organization_id, c.teacher_id, u.full_name, 'COURSE_SUBMITTED', 'COURSE', c.title, c.id, NULL, NULL, c.created_at
+FROM courses c JOIN users u ON u.id = c.teacher_id WHERE @audit_has_data = 0;
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT c.organization_id, e.student_id, u.full_name, 'ENROLLMENT', 'COURSE', c.title, e.course_id, e.student_id, NULL, e.enrolled_at
+FROM enrollments e JOIN courses c ON c.id = e.course_id JOIN users u ON u.id = e.student_id WHERE @audit_has_data = 0;
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT c.organization_id, s.student_id, u.full_name, 'ASSIGNMENT_SUBMITTED', 'ASSIGNMENT', a.title, a.course_id, s.student_id, NULL, s.submitted_at
+FROM assignment_submissions s
+JOIN assignments a ON a.id = s.assignment_id
+JOIN courses c ON c.id = a.course_id
+JOIN users u ON u.id = s.student_id WHERE @audit_has_data = 0;
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT c.organization_id, c.teacher_id, t.full_name, 'ASSIGNMENT_GRADED', 'ASSIGNMENT', a.title, a.course_id, s.student_id,
+  CONCAT(ROUND(100.0 * s.score / NULLIF(a.max_score, 0), 0), '%'), s.graded_at
+FROM assignment_submissions s
+JOIN assignments a ON a.id = s.assignment_id
+JOIN courses c ON c.id = a.course_id
+JOIN users t ON t.id = c.teacher_id
+WHERE s.score IS NOT NULL AND @audit_has_data = 0;
+
+INSERT INTO audit_log (organization_id, actor_id, actor_name, action, entity_type, entity_name, course_id, student_id, detail, created_at)
+SELECT c.organization_id, s.student_id, u.full_name, 'QUIZ_COMPLETED', 'QUIZ', q.title, q.course_id, s.student_id,
+  CONCAT(ROUND(100.0 * s.score / (SELECT COALESCE(SUM(points), 1) FROM quiz_questions WHERE quiz_id = q.id), 0), '%'),
+  s.submitted_at
+FROM quiz_submissions s
+JOIN quizzes q ON q.id = s.quiz_id
+JOIN courses c ON c.id = q.course_id
+JOIN users u ON u.id = s.student_id WHERE @audit_has_data = 0;

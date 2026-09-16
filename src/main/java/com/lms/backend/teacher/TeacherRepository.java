@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.lms.backend.admin.CourseStatus;
+import com.lms.backend.audit.AuditAction;
+import com.lms.backend.audit.AuditRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -16,22 +18,12 @@ import org.springframework.stereotype.Repository;
 public class TeacherRepository {
     private final JdbcClient jdbc;
     private final JdbcTemplate jdbcTemplate;
+    private final AuditRepository audit;
 
-    public TeacherRepository(JdbcClient jdbc, JdbcTemplate jdbcTemplate) {
+    public TeacherRepository(JdbcClient jdbc, JdbcTemplate jdbcTemplate, AuditRepository audit) {
         this.jdbc = jdbc;
         this.jdbcTemplate = jdbcTemplate;
-    }
-
-    public TeacherDashboardResponse dashboard(Long teacherId) {
-        return jdbc.sql("""
-                SELECT (SELECT COUNT(*) FROM courses WHERE teacher_id = :teacherId),
-                  (SELECT COUNT(*) FROM courses WHERE teacher_id = :teacherId AND status = 'PENDING'),
-                  (SELECT COUNT(DISTINCT e.student_id) FROM enrollments e JOIN courses c ON c.id=e.course_id WHERE c.teacher_id=:teacherId),
-                  (SELECT COUNT(*) FROM course_content cc JOIN courses c ON c.id=cc.course_id WHERE c.teacher_id=:teacherId),
-                  (SELECT COUNT(*) FROM assignments a JOIN courses c ON c.id=a.course_id WHERE c.teacher_id=:teacherId),
-                  (SELECT COUNT(*) FROM quizzes q JOIN courses c ON c.id=q.course_id WHERE c.teacher_id=:teacherId),
-                  (SELECT COUNT(*) FROM assignment_submissions s JOIN assignments a ON a.id=s.assignment_id JOIN courses c ON c.id=a.course_id WHERE c.teacher_id=:teacherId AND s.score IS NULL)
-                """).param("teacherId", teacherId).query((rs, n) -> new TeacherDashboardResponse(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4), rs.getLong(5), rs.getLong(6), rs.getLong(7))).single();
+        this.audit = audit;
     }
 
     public List<TeacherCourseResponse> courses(Long teacherId) {
@@ -65,6 +57,12 @@ public class TeacherRepository {
     public List<Object[]> categories(Long organizationId) { return jdbc.sql("SELECT id,name FROM course_categories WHERE organization_id=:organizationId ORDER BY name").param("organizationId",organizationId).query((rs,n)->new Object[]{rs.getLong(1),rs.getString(2)}).list(); }
     public boolean ownsCourse(Long courseId, Long teacherId) { return jdbc.sql("SELECT COUNT(*) FROM courses WHERE id=:id AND teacher_id=:teacherId").param("id",courseId).param("teacherId",teacherId).query(Long.class).single()>0; }
     public List<java.util.Map<String,Object>> content(Long courseId) { return jdbc.sql("SELECT id,title,type,body,created_at FROM course_content WHERE course_id=:courseId ORDER BY created_at DESC").param("courseId",courseId).query().listOfRows(); }
+
+    public Optional<String> contentFile(Long id, Long teacherId) {
+        return jdbc.sql("SELECT body FROM course_content WHERE id = :id AND type = 'PDF' AND body LIKE 'file:%' "
+                + "AND course_id IN (SELECT id FROM courses WHERE teacher_id = :teacherId)")
+                .param("id", id).param("teacherId", teacherId).query(String.class).optional();
+    }
     public void addContent(TeacherRequests.Content r) { jdbc.sql("INSERT INTO course_content(course_id,title,type,body) VALUES(:courseId,:title,:type,:body)").param("courseId",r.courseId()).param("title",r.title().trim()).param("type",r.type().name()).param("body",blankToNull(r.body())).update(); }
     public List<java.util.Map<String,Object>> assignments(Long teacherId) { return jdbc.sql("SELECT a.id,a.title,a.instructions,a.due_at,a.max_score,a.status,a.course_id,c.title course_title,COUNT(s.id) submissions,SUM(CASE WHEN s.id IS NOT NULL AND s.score IS NULL THEN 1 ELSE 0 END) awaiting_grade FROM assignments a JOIN courses c ON c.id=a.course_id LEFT JOIN assignment_submissions s ON s.assignment_id=a.id WHERE c.teacher_id=:teacherId GROUP BY a.id,a.title,a.instructions,a.due_at,a.max_score,a.status,a.course_id,c.title ORDER BY a.due_at IS NULL,a.due_at").param("teacherId",teacherId).query().listOfRows(); }
     public void addAssignment(TeacherRequests.Assignment r) { jdbc.sql("INSERT INTO assignments(course_id,title,instructions,due_at,max_score,status) VALUES(:courseId,:title,:instructions,:dueAt,:maxScore,'DRAFT')").param("courseId",r.courseId()).param("title",r.title().trim()).param("instructions",blankToNull(r.instructions())).param("dueAt",r.dueAt()).param("maxScore",r.maxScore()).update(); }
@@ -87,28 +85,34 @@ public class TeacherRepository {
                 ORDER BY u.full_name
                 """).param("teacherId", teacherId).query().listOfRows();
 
+        java.util.Map<Long, List<java.util.Map<String, Object>>> assignments = jdbc.sql("""
+                SELECT e.student_id, a.id, a.title, c.title AS course_title, a.max_score, s.submitted_at, s.score, s.feedback
+                FROM assignments a
+                JOIN courses c ON c.id = a.course_id
+                JOIN enrollments e ON e.course_id = c.id
+                LEFT JOIN assignment_submissions s ON s.assignment_id = a.id AND s.student_id = e.student_id
+                WHERE c.teacher_id = :teacherId AND a.status = 'PUBLISHED'
+                ORDER BY c.title, a.due_at IS NULL, a.due_at
+                """).param("teacherId", teacherId).query().listOfRows().stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        row -> ((Number) row.get("student_id")).longValue(), java.util.stream.Collectors.toList()));
+
+        java.util.Map<Long, List<java.util.Map<String, Object>>> quizzes = jdbc.sql("""
+                SELECT e.student_id, q.id, q.title, c.title AS course_title, s.submitted_at, s.score
+                FROM quizzes q
+                JOIN courses c ON c.id = q.course_id
+                JOIN enrollments e ON e.course_id = c.id
+                LEFT JOIN quiz_submissions s ON s.quiz_id = q.id AND s.student_id = e.student_id
+                WHERE c.teacher_id = :teacherId AND q.status = 'PUBLISHED'
+                ORDER BY c.title, q.published_at DESC
+                """).param("teacherId", teacherId).query().listOfRows().stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        row -> ((Number) row.get("student_id")).longValue(), java.util.stream.Collectors.toList()));
+
         for (java.util.Map<String, Object> student : students) {
             Long studentId = ((Number) student.get("id")).longValue();
-            List<java.util.Map<String, Object>> assignmentRows = jdbc.sql("""
-                    SELECT a.id, a.title, c.title AS course_title, a.max_score, s.submitted_at, s.score, s.feedback
-                    FROM assignments a
-                    JOIN courses c ON c.id = a.course_id
-                    JOIN enrollments e ON e.course_id = c.id AND e.student_id = :studentId
-                    LEFT JOIN assignment_submissions s ON s.assignment_id = a.id AND s.student_id = :studentId
-                    WHERE c.teacher_id = :teacherId AND a.status = 'PUBLISHED'
-                    ORDER BY c.title, a.due_at IS NULL, a.due_at
-                    """).param("studentId", studentId).param("teacherId", teacherId).query().listOfRows();
-            List<java.util.Map<String, Object>> quizRows = jdbc.sql("""
-                    SELECT q.id, q.title, c.title AS course_title, s.submitted_at, s.score
-                    FROM quizzes q
-                    JOIN courses c ON c.id = q.course_id
-                    JOIN enrollments e ON e.course_id = c.id AND e.student_id = :studentId
-                    LEFT JOIN quiz_submissions s ON s.quiz_id = q.id AND s.student_id = :studentId
-                    WHERE c.teacher_id = :teacherId AND q.status = 'PUBLISHED'
-                    ORDER BY c.title, q.published_at DESC
-                    """).param("studentId", studentId).param("teacherId", teacherId).query().listOfRows();
-            student.put("assignments", assignmentRows);
-            student.put("quizzes", quizRows);
+            student.put("assignments", assignments.getOrDefault(studentId, List.of()));
+            student.put("quizzes", quizzes.getOrDefault(studentId, List.of()));
         }
         return students;
     }
@@ -209,4 +213,18 @@ public class TeacherRepository {
         catch (IllegalArgumentException | NullPointerException ignored) { return CourseStatus.PENDING; }
     }
     private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+
+    public java.util.Map<String, Object> assignmentContext(Long submissionId) {
+        return jdbc.sql("""
+                SELECT c.organization_id, a.title, a.course_id, s.student_id, a.max_score
+                FROM assignment_submissions s
+                JOIN assignments a ON a.id = s.assignment_id
+                JOIN courses c ON c.id = a.course_id
+                WHERE s.id = :submissionId
+                """).param("submissionId", submissionId).query().listOfRows().stream().findFirst().orElse(java.util.Map.of());
+    }
+
+    public List<java.util.Map<String, Object>> activity(Long teacherId, Long organizationId) {
+        return audit.recentForTeacher(teacherId, organizationId, 10);
+    }
 }

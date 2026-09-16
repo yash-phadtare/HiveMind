@@ -38,10 +38,10 @@ public class StudentController {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Student access is required.");
     }
 
-    @GetMapping("/dashboard")
-    public Map<String, Object> dashboard(HttpSession session) {
+    @GetMapping("/activity")
+    public List<Map<String, Object>> activity(HttpSession session) {
         AuthResponse user = student(session);
-        return repository.dashboard(user.id(), user.organizationId());
+        return repository.activity(user.id(), user.organizationId());
     }
 
     @GetMapping("/courses")

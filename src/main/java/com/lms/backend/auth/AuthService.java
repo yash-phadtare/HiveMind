@@ -3,6 +3,8 @@ package com.lms.backend.auth;
 import java.util.Locale;
 import java.util.List;
 
+import com.lms.backend.audit.AuditAction;
+import com.lms.backend.audit.AuditRepository;
 import com.lms.backend.user.User;
 import com.lms.backend.user.UserRepository;
 import com.lms.backend.user.OrganizationRepository;
@@ -17,11 +19,14 @@ public class AuthService {
     private final UserRepository users;
     private final OrganizationRepository organizations;
     private final PasswordEncoder passwordEncoder;
+    private final AuditRepository audit;
 
-    public AuthService(UserRepository users, OrganizationRepository organizations, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository users, OrganizationRepository organizations, PasswordEncoder passwordEncoder,
+                       AuditRepository audit) {
         this.users = users;
         this.organizations = organizations;
         this.passwordEncoder = passwordEncoder;
+        this.audit = audit;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -38,6 +43,9 @@ public class AuthService {
         AccountStatus status = AccountStatus.PENDING;
         User user = users.save(request.fullName().trim(), email,
                 passwordEncoder.encode(request.password()), request.role(), status, request.organizationId());
+        AuditAction action = user.role() == Role.TEACHER ? AuditAction.TEACHER_REGISTERED : AuditAction.STUDENT_REGISTERED;
+        audit.record(action, user.organizationId(), user.id(), user.fullName(), user.role().name(), null, null,
+                user.role() == Role.STUDENT ? user.id() : null, null);
         return response(user);
     }
 
